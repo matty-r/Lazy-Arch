@@ -1,4 +1,7 @@
 # arch-build
+# WARNING !
+This script was intended for personal use only. Use at your own risk - and may result in a loss of data.
+
 ### About
 
 Created because I install Arch Linux on almost all of my PCs (Desktops, Laptops, VMs), and I wanted a way to automate the boring stuff - such as partitioning, installing a DE with it's packages, and setting up a boot loader. With that said, this script may not work as intended for everybody, and it's still very much a work in progress.
@@ -9,13 +12,24 @@ There are a lot of Arch Linux install scripts out there, but if you think you'd 
 
 ### Usage
 
-* Clone the GitHub repository onto your local drive
-* Edit arch-build.sh (if needed) with the appropriate bundles you need
+* Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
+* Edit arch-build.sh with the appropriate bundles you need
 * Set arch-build.sh to executable
 * Execute arch-build.sh
 
 ```sh
-$ git clone https://github.com/matty-r/arch-build
-$ chmod +x arch-build.sh
-$ ./arch-build.sh
+wget https://raw.githubusercontent.com/matty-r/arch-build/master/arch-build.sh
+wget https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+wget https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.conf
+chmod +x arch-build.sh
+./arch-build.sh
+```
+
+Using git (Least Likely option - as git isn't installed on the arch iso)
+```sh
+git clone https://github.com/matty-r/arch-build
+cd arch-build
+mv * ~/
+chmod +x arch-build.sh
+./arch-build.sh
 ```
