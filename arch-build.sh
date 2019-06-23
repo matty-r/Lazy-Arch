@@ -1,15 +1,15 @@
 #!/bin/bash
-# Version 1.1
+# Version 1.0
 # Arch Linux INSTALL SCRIPT
 
 declare -A USERVARIABLES
 
 # User Variables. Change these if Unattended install
-USERVARIABLES[PLATFORM]="phys"  ## "phys" for install on physical hardware. "vbox" for install as VirtualBox Guest. "qemu" for install as QEMU/ProxMox Guest.
+USERVARIABLES[PLATFORM]="phys" #Platform currently unused ## "phys" for install on physical hardware. "vbox" for install as VirtualBox Guest. "qemu" for install as QEMU/ProxMox Guest.
 USERVARIABLES[USERNAME]="matt"
 USERVARIABLES[HOSTNAME]="arch-temp"
 USERVARIABLES[BUNDLES]="rdp qemuGuest admin kde theme" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
-USERVARIABLES[DESKTOP]="none" ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[DESKTOP]="none" #DESKTOP currently unused. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
@@ -29,8 +29,10 @@ INSTALLSTAGE=""
 
 #Available Software Bundles
 source $SCRIPTROOT/softwareBundles.conf
+#Addtional configurations needed for selected bundles
 source $SCRIPTROOT/bundleConfigurators.sh
 
+#Prompt User for settings
 promptSettings(){
   for variable in "${!USERVARIABLES[@]}"
   do
@@ -39,6 +41,7 @@ promptSettings(){
   done
 }
 
+#Print out the settings
 printSettings(){
   for variable in "${!USERVARIABLES[@]}"
   do
@@ -46,6 +49,7 @@ printSettings(){
   done
 }
 
+#Export out the settings used/selected to installsettings.cfg
 generateSettings(){
   # create settings file
   echo "" > "$SCRIPTROOT/installsettings.cfg"
@@ -59,27 +63,31 @@ generateSettings(){
   $(exportSettings "ROOTPART" ${USERVARIABLES[ROOTPART]})
   $(exportSettings "ROOTMODE" ${USERVARIABLES[ROOTMODE]})
 
-  # DO NOT EDIT THESE
+  #Grab the device chosen for the boot part
   BOOTDEVICE=$(echo ${USERVARIABLES[BOOTPART]} | cut -f3,3 -d'/' | sed 's/[0-9]//g')
   $(exportSettings "BOOTDEVICE" $BOOTDEVICE)
+  #Grab the device chosen for the root part
   ROOTDEVICE=$(echo ${USERVARIABLES[ROOTPART]} | cut -f3,3 -d'/' | sed 's/[0-9]//g')
   $(exportSettings "ROOTDEVICE" $ROOTDEVICE)
   $(exportSettings "SCRIPTPATH" "$SCRIPTPATH")
   $(exportSettings "SCRIPTROOT" "$SCRIPTROOT")
+  #Find the currently used interface - used to enable dhcpcd on that interface
   NETINT=$(ip link | grep "BROADCAST,MULTICAST,UP,LOWER_UP" | grep -oP '(?<=: ).*(?=: )')
   $(exportSettings "NETINT" $NETINT)
+
+  #Determine if it's an EFI install or not
   if [ -d "$EFIPATH" ]
   then
     BOOTTYPE="EFI"
   else
     BOOTTYPE="BIOS"
   fi
-
   $(exportSettings "BOOTTYPE" $BOOTTYPE)
 
   #set comparison to ignore case temporarily
   shopt -s nocasematch
 
+  #Detect CPU type. Used for settings the microcode (ucode) on the boot loader
   CPUTYPE=$(lscpu | grep Vendor)
   if [[ $CPUTYPE =~ "AMD" ]]; then
     CPUTYPE="amd"
@@ -88,6 +96,7 @@ generateSettings(){
   fi
   $(exportSettings "CPUTYPE" "$CPUTYPE")
 
+  #Detect GPU type. Add the appropriate packages to install.
   GPUTYPE=$(lspci -vnn | grep VGA)
   if [[ $GPUTYPE =~ "nvidia" ]]; then
     GPUTYPE="nvidia"
@@ -163,7 +172,8 @@ firstInstallStage(){
 
   umount /mnt/boot
   umount /mnt
-  #reboot
+
+  reboot
 }
 
 secondInstallStage(){
@@ -268,7 +278,7 @@ finalInstallStage(){
 
   echo "Script done. You're good to go after reboot. Rebooting in 20 seconds..."
   sleep 20
-  reboot
+  #We now leave the final chroot - then reboot.
 }
 
 
