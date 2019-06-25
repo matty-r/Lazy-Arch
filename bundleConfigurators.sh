@@ -1,12 +1,5 @@
 #!/bin/bash
 
-
-nvidiaPackages-Config(){
-  echo "nvidia configurator has executed"
-}
-
-
-######################################## Setup install as a virtualbox guest
 vboxGuestPackages-Config(){
   sudo systemctl enable vboxservice.service
   echo "\"FS0:\EFI\refind\refind_x64.efi\"" | sudo tee -a /boot/startup.nsh
@@ -41,6 +34,11 @@ hyperGuestPackages-Config(){
   cp /etc/X11/xinit/xinitrc ~/.xinitrc
 }
 
+esxiGuestPackages-Config(){
+  sudo systemctl enable vmtoolsd.service vmware-vmblock-fuse.service
+  echo "needs_root_rights=yes" | sudo tee /etc/X11/Xwrapper.config
+}
+
 officePackages-Config(){
   sudo systemctl enable org.cups.cupsd
 }
@@ -57,11 +55,11 @@ rdpPackages-Config(){
 
   echo "allowed_users=anybody" | sudo tee /etc/X11/Xwrapper.config
   case ${USERVARIABLES[DESKTOP]} in
-    "KDE" ) SESHNAME="startkde"
+    "kde" ) SESHNAME="startkde"
       ;;
-    "XFCE" ) SESHNAME="startxfce4"
+    "xfce" ) SESHNAME="startxfce4"
       ;;
-    "GTK" ) SESHNAME="gnome-session"
+    "gnome" ) SESHNAME="gnome-session"
       ;;
   esac
 

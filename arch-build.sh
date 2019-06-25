@@ -1,15 +1,35 @@
 #!/bin/bash
-# Version 1.0
+# Version 1.1
 # Arch Linux INSTALL SCRIPT
 
-declare -A USERVARIABLES
+#Check what params this has been launched with.
+# Unattended install is default
+# -d or --dry-run will *NOT* make any changes to your system - used to export the settings and
+#   show what will be done (Instead of actually doing it)
+# -p or --prompt will ask the user to input settings
+while [[ "$#" -gt 0 ]];
+do
+  case $1 in
+    -d|--dry-run)
+        DRYRUN=1
+    ;;
+    -p|--prompt)
+        PROMPT=1
+    ;;
+    *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+    ;;
+  esac
+  shift
+done
 
 # User Variables. Change these if Unattended install
-USERVARIABLES[PLATFORM]="phys" #Platform currently unused ## "phys" for install on physical hardware. "vbox" for install as VirtualBox Guest. "qemu" for install as QEMU/ProxMox Guest.
+declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="matt"
 USERVARIABLES[HOSTNAME]="arch-temp"
-USERVARIABLES[BUNDLES]="rdp qemuGuest admin kde theme" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
-USERVARIABLES[DESKTOP]="none" #DESKTOP currently unused. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[BUNDLES]="xfce" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
+USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and -TODO- will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
@@ -26,6 +46,7 @@ NETINT=""
 CPUTYPE=""
 GPUTYPE=""
 INSTALLSTAGE=""
+
 
 #Available Software Bundles
 source $SCRIPTROOT/softwareBundles.conf
@@ -52,22 +73,25 @@ printSettings(){
 #Export out the settings used/selected to installsettings.cfg
 generateSettings(){
   # create settings file
-  echo "" > "$SCRIPTROOT/installsettings.cfg"
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "write settings to $SCRIPTROOT/installsettings.cfg"
+  else
+    echo "" > "$SCRIPTROOT/installsettings.cfg"
+  fi
 
-  $(exportSettings "PLATFORM" ${USERVARIABLES[PLATFORM]})
-  $(exportSettings "USERNAME" ${USERVARIABLES[USERNAME]})
-  $(exportSettings "HOSTNAME" ${USERVARIABLES[HOSTNAME]})
-  $(exportSettings "DESKTOP" ${USERVARIABLES[DESKTOP]})
-  $(exportSettings "BOOTPART" ${USERVARIABLES[BOOTPART]})
-  $(exportSettings "BOOTMODE" ${USERVARIABLES[BOOTMODE]})
-  $(exportSettings "ROOTPART" ${USERVARIABLES[ROOTPART]})
-  $(exportSettings "ROOTMODE" ${USERVARIABLES[ROOTMODE]})
+  $(exportSettings "USERNAME" "${USERVARIABLES[USERNAME]}")
+  $(exportSettings "HOSTNAME" "${USERVARIABLES[HOSTNAME]}")
+  $(exportSettings "DESKTOP" "${USERVARIABLES[DESKTOP]}")
+  $(exportSettings "ROOTPART" "${USERVARIABLES[ROOTPART]}")
+  $(exportSettings "BOOTPART" "${USERVARIABLES[BOOTPART]}")
+  $(exportSettings "BOOTMODE" "${USERVARIABLES[BOOTMODE]}")
+  $(exportSettings "ROOTMODE" "${USERVARIABLES[ROOTMODE]}")
 
   #Grab the device chosen for the boot part
-  BOOTDEVICE=$(echo ${USERVARIABLES[BOOTPART]} | cut -f3,3 -d'/' | sed 's/[0-9]//g')
+  BOOTDEVICE=$(echo "${USERVARIABLES[BOOTPART]}" | cut -f3,3 -d'/' | sed 's/[0-9]//g')
   $(exportSettings "BOOTDEVICE" $BOOTDEVICE)
   #Grab the device chosen for the root part
-  ROOTDEVICE=$(echo ${USERVARIABLES[ROOTPART]} | cut -f3,3 -d'/' | sed 's/[0-9]//g')
+  ROOTDEVICE=$(echo "${USERVARIABLES[ROOTPART]}" | cut -f3,3 -d'/' | sed 's/[0-9]//g')
   $(exportSettings "ROOTDEVICE" $ROOTDEVICE)
   $(exportSettings "SCRIPTPATH" "$SCRIPTPATH")
   $(exportSettings "SCRIPTROOT" "$SCRIPTROOT")
@@ -87,11 +111,35 @@ generateSettings(){
   #set comparison to ignore case temporarily
   shopt -s nocasematch
 
-  #Detect CPU type. Used for settings the microcode (ucode) on the boot loader
+  #Detect platform type. Add the appropriate packages to install.
+  if [[ $(hostnamectl | grep Chassis | cut -f2,2 -d':' | xargs) =~ 'vm' ]]; then
+    VMTYPE=$(hostnamectl | grep Virtualization | cut -f2,2 -d':' | xargs)
+    case $VMTYPE in
+      'kvm' )
+        PLATFORM="qemuGuest"
+        ;;
+      'vmware' )
+        PLATFORM="esxiGuest"
+        ;;
+      'microsoft' )
+        PLATFORM="hyperGuest"
+        ;;
+      'oracle' )
+        PLATFORM="vboxGuest"
+        ;;
+    esac
+    if [[ ! "${USERVARIABLES[BUNDLES]}" =~ "$PLATFORM" ]]; then
+      USERVARIABLES[BUNDLES]+=" $PLATFORM"
+    fi
+  else
+    PLATFORM="phys"
+  fi
+
+  #Detect CPU type. Used for setting the microcode (ucode) on the boot loader
   CPUTYPE=$(lscpu | grep Vendor)
   if [[ $CPUTYPE =~ "AMD" ]]; then
     CPUTYPE="amd"
-  else
+  elif [[ $CPUTYPE =~ "Intel" ]]; then
     CPUTYPE="intel"
   fi
   $(exportSettings "CPUTYPE" "$CPUTYPE")
@@ -111,13 +159,17 @@ generateSettings(){
     GPUTYPE="vm"
   fi
   $(exportSettings "GPUTYPE" "$GPUTYPE")
-
+  $(exportSettings "BUNDLES" "${USERVARIABLES[BUNDLES]}")
   #reset comparisons
   shopt -u nocasematch
 }
 
 
 driver(){
+  if [[ $PROMPT -eq 1 ]]; then
+    promptSettings
+  fi
+
   INSTALLSTAGE=$(cat "$SCRIPTROOT/stage.cfg")
   case $INSTALLSTAGE in
     "FIRST"|"")
@@ -165,15 +217,20 @@ firstInstallStage(){
   chrootTime
 
   #Go into chroot. Should start at secondInstallStage
-  arch-chroot /mnt ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
+  if [[ $DRYRUN -eq 1 ]]; then
+    secondInstallStage
+    thirdInstallStage
+  else
+    arch-chroot /mnt ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
 
-  #Go into chroot as new user. Should start at thirdInstallStage as new user.
-  arch-chroot /mnt su ${USERVARIABLES[USERNAME]} ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
+    #Go into chroot as new user. Should start at thirdInstallStage as new user.
+    arch-chroot /mnt su ${USERVARIABLES[USERNAME]} ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
+  fi
 
-  umount /mnt/boot
-  umount /mnt
+  runCommand umount /mnt/boot
+  runCommand umount /mnt
 
-  reboot
+  runCommand reboot
 }
 
 secondInstallStage(){
@@ -244,11 +301,16 @@ installSelectedBundles(){
   done
 
   aggregatePackagesString="${aggregatePackagesArr[@]}"
-  yay -S --noconfirm $aggregatePackagesString
+  runCommand yay -S --noconfirm $aggregatePackagesString
 
   configInstalledBundles
+
   #Only used if the install craps out or something
-  echo "FOURTH" > /home/${USERVARIABLES[USERNAME]}/stage.cfg
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write Fourth to /home/${USERVARIABLES[USERNAME]}/stage.cfg"
+  else
+    runCommand echo "FOURTH" > /home/${USERVARIABLES[USERNAME]}/stage.cfg
+  fi
 }
 
 configInstalledBundles(){
@@ -264,7 +326,7 @@ configInstalledBundles(){
         #Run the function if it exists
         if [[ $? -eq 0 ]]; then
           echo "Configuring ${availableBundles[$bundle]}.."
-          $bundleConfig
+          runCommand $bundleConfig
         else
           echo "No additional config necessary for ${availableBundles[$bundle]}"
         fi
@@ -286,7 +348,10 @@ exportSettings(){
   echo "Exporting $1=$2" 1>&2
   EXPORTPARAM="$1=$2"
   ## write all settings to a file on new root
-  echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
+
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
+  fi
 }
 
 #retrieveSettings 'SETTINGNAME'
@@ -298,9 +363,18 @@ retrieveSettings(){
   echo $SETTING
 }
 
+runCommand(){
+  if [[ $DRYRUN -eq 1 ]]; then
+    printf '%q ' "$@"
+    printf '\n'
+  else
+    "$@"
+  fi
+}
+
 ###Update the system clock
 systemClock(){
-  timedatectl set-ntp true
+  runCommand timedatectl set-ntp true
 }
 
 ### PARTITION DISKS
@@ -313,8 +387,7 @@ partDisks(){
       "CREATE")
         echo "EFI: Boot partition will be created. Whole disk will be destroyed!"
         DEVICE=$(echo ${USERVARIABLES[BOOTPART]} | sed 's/[0-9]//g')
-        parted -s $DEVICE -- mklabel gpt \
-              mkpart primary fat32 0% 256MiB
+        runCommand parted -s $DEVICE -- mklabel gpt mkpart primary fat32 0% 256MiB
         ;;
     esac
   fi
@@ -328,11 +401,10 @@ partDisks(){
         if [[ $BOOTTYPE = "EFI" ]]; then
           #If the root device matches the boot device, don't setup device label
           if [ $BOOTDEVICE = $ROOTDEVICE ]; then
-            parted -s $DEVICE -- mkpart primary ext4 256MiB 100%
+            runCommand parted -s $DEVICE -- mkpart primary ext4 256MiB 100%
           else
             echo "EFI: Root partition will be created. Whole disk will be destroyed!"
-            parted -s $DEVICE -- mklabel gpt \
-                  mkpart primary ext4 0% 100%
+            runCommand parted -s $DEVICE -- mklabel gpt mkpart primary ext4 0% 100%
           fi
         else
           #BIOS system. If boot device matches root device, then make root part the same as boot part
@@ -340,9 +412,7 @@ partDisks(){
             USERVARIABLES[ROOTPART]="${USERVARIABLES[BOOTPART]}"
           fi
           echo "BIOS: Root partition will be created. Whole disk will be destroyed!"
-          parted -s $DEVICE -- mklabel msdos \
-                mkpart primary ext4 0% 100% \
-                set 1 boot on
+          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on
         fi
         ;;
     esac
@@ -353,15 +423,15 @@ partDisks(){
 formatParts(){
   if [[ $BOOTTYPE = "EFI" ]]; then
     if [ ${USERVARIABLES[BOOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[BOOTMODE]} = "FORMAT" ]; then
-      mkfs.fat -F32 ${USERVARIABLES[BOOTPART]}
+      runCommand mkfs.fat -F32 ${USERVARIABLES[BOOTPART]}
     fi
 
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
-      mkfs.ext4 -F -F ${USERVARIABLES[ROOTPART]}
+      runCommand mkfs.ext4 -F -F ${USERVARIABLES[ROOTPART]}
     fi
   else
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
-      mkfs.ext4 -F -F ${USERVARIABLES[ROOTPART]}
+      runCommand mkfs.ext4 -F -F ${USERVARIABLES[ROOTPART]}
     fi
   fi
 }
@@ -369,16 +439,20 @@ formatParts(){
 ## Mount the file systems
 mountParts(){
   if [[ $BOOTTYPE = "EFI" ]]; then
-    mount ${USERVARIABLES[ROOTPART]} /mnt
-    mkdir /mnt/boot
-    mount ${USERVARIABLES[BOOTPART]} /mnt/boot
+    runCommand mount ${USERVARIABLES[ROOTPART]} /mnt
+    runCommand mkdir /mnt/boot
+    runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
   else
-    mount ${USERVARIABLES[ROOTPART]} /mnt
+    runCommand mount ${USERVARIABLES[ROOTPART]} /mnt
   fi
 }
 
 
 setAussieMirrors(){
+if [[ $DRYRUN -eq 1 ]]; then
+  echo "Write Aussie Mirrors to /etc/pacman.d/mirrorlist"
+else
+
 cat <<EOF > /etc/pacman.d/mirrorlist
 ##
 ## Arch Linux repository mirrorlist
@@ -396,138 +470,172 @@ Server = http://ftp.swin.edu.au/archlinux/\$repo/os/\$arch
 ## Australia
 Server = http://mirror.internode.on.net/pub/archlinux/\$repo/os/\$arch
 EOF
+fi
 }
 
 ### Install the base packages
 installArchLinuxBase(){
   setAussieMirrors
-  pacstrap /mnt base base-devel openssh git
+  runCommand pacstrap /mnt base base-devel openssh git
 }
 
 ### Generate an fstab file
 makeFstab(){
-  genfstab -U /mnt >> /mnt/etc/fstab
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Generate fstab at /mnt/etc/fstab"
+  else
+    runCommand genfstab -U /mnt >> /mnt/etc/fstab
+  fi
 }
 
 ### Change root into the new system:
 chrootTime(){
-  echo "SECOND" > $SCRIPTROOT/stage.cfg
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write SECOND to $SCRIPTROOT/stage.cfg"
+  else
+    runCommand echo "SECOND" > $SCRIPTROOT/stage.cfg
+  fi
 
-  mkdir /mnt/home/${USERVARIABLES[USERNAME]}
-  cp $SCRIPTROOT/stage.cfg /mnt/home/${USERVARIABLES[USERNAME]}
-  cp $SCRIPTPATH /mnt/home/${USERVARIABLES[USERNAME]}
-  cp $SCRIPTROOT/softwareBundles.conf /mnt/home/${USERVARIABLES[USERNAME]}
-  cp $SCRIPTROOT/bundleConfigurators.sh /mnt/home/${USERVARIABLES[USERNAME]}
-  cp $SCRIPTROOT/installsettings.cfg /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand mkdir /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand cp $SCRIPTROOT/stage.cfg /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand cp $SCRIPTPATH /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand cp $SCRIPTROOT/softwareBundles.conf /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand cp $SCRIPTROOT/bundleConfigurators.sh /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand cp $SCRIPTROOT/installsettings.cfg /mnt/home/${USERVARIABLES[USERNAME]}
 }
 
 ### Set the time zone
 setTime(){
-  ln -sf /usr/share/zoneinfo/Australia/Brisbane /etc/localtime
-  hwclock --systohc
+  runCommand ln -sf /usr/share/zoneinfo/Australia/Brisbane /etc/localtime
+  runCommand hwclock --systohc
 }
 
 ### Uncomment en_US.UTF-8 UTF-8 and other needed locales in /etc/locale.gen
 genLocales(){
-  sed -i "s/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
-  sed -i "s/#en_AU.UTF-8 UTF-8/en_AU.UTF-8 UTF-8/" /etc/locale.gen
-  locale-gen
-  echo "LANG=en_AU.UTF-8" >> /etc/locale.conf
+  runCommand sed -i "s/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
+  runCommand sed -i "s/#en_AU.UTF-8 UTF-8/en_AU.UTF-8 UTF-8/" /etc/locale.gen
+  runCommand locale-gen
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "LANG=en_AU.UTF-8 to /etc/locale.conf"
+  else
+    runCommand echo "LANG=en_AU.UTF-8" >> /etc/locale.conf
+  fi
 }
 
 ### Create the hostname file:
 applyHostname(){
-  echo "${USERVARIABLES[HOSTNAME]}" >> /etc/hostname
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write ${USERVARIABLES[HOSTNAME]} to /etc/hostname"
+  else
+    runCommand echo "${USERVARIABLES[HOSTNAME]}" >> /etc/hostname
+  fi
 }
 
 ### ADD HOSTS ENTRIES
 addHosts(){
-  echo "127.0.0.1     localhost" >> /etc/hosts
-  echo "::1       localhost" >> /etc/hosts
-  echo "127.0.1.1     ${USERVARIABLES[HOSTNAME]}.mydomain      ${USERVARIABLES[HOSTNAME]}" >> /etc/hosts
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write Localinfo to /etc/hosts"
+  else
+    runCommand echo "127.0.0.1     localhost" >> /etc/hosts
+    runCommand echo "::1       localhost" >> /etc/hosts
+    runCommand echo "127.0.1.1     ${USERVARIABLES[HOSTNAME]}.mydomain      ${USERVARIABLES[HOSTNAME]}" >> /etc/hosts
+  fi
 }
 
 ### GENERATE INITRAMFS
 genInit(){
-  mkinitcpio -p linux
+  runCommand mkinitcpio -p linux
 }
 
 ### ROOT PASSWORD
 rootPassword(){
-  passwd
+  runCommand passwd
 }
 
 ### INSTALL BOOTLOADER AND MICROCODE
 readyForBoot(){
   if [[ $BOOTTYPE = "EFI" ]]; then
-    pacman -S --noconfirm refind-efi $CPUTYPE'-ucode'
-    refind-install
-    fixRefind
+    runCommand pacman -S --noconfirm refind-efi $CPUTYPE'-ucode'
+    runCommand refind-install
+    runCommand fixRefind
   else
     DEVICE=$(echo ${USERVARIABLES[ROOTPART]} | sed 's/[0-9]//g')
-    pacman -S --noconfirm grub $CPUTYPE'-ucode'
-    grub-install --target=i386-pc $DEVICE
-    grub-mkconfig -o /boot/grub/grub.cfg
+    runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode'
+    runCommand grub-install --target=i386-pc $DEVICE
+    runCommand grub-mkconfig -o /boot/grub/grub.cfg
   fi
 }
 
 fixRefind(){
   ROOTUUID=$(blkid | grep ${USERVARIABLES[ROOTPART]} | grep -oP '(?<= UUID=").*(?=" TYPE)')
 
-cat <<EOF > /boot/refind_linux.conf
+if [[ $DRYRUN -eq 1 ]]; then
+  echo "Fix refind. add root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img"
+else
+runCommand cat <<EOF > /boot/refind_linux.conf
 "Boot with standard options"  "root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img"
 "Boot using fallback initramfs"  "root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux-fallback.img"
 "Boot to terminal"  "root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img systemd.unit=multi-user.target"
 EOF
+fi
 }
 
 enableNetworkBoot(){
-  sudo systemctl enable dhcpcd@$NETINT.service
+  runCommand sudo systemctl enable dhcpcd@$NETINT.service
 }
 
 ####### add a user add to wheel group
 createUser(){
-  useradd -m ${USERVARIABLES[USERNAME]}
-  gpasswd -a ${USERVARIABLES[USERNAME]} wheel
+  runCommand useradd -m ${USERVARIABLES[USERNAME]}
+  runCommand gpasswd -a ${USERVARIABLES[USERNAME]} wheel
   ####### change user password
   # su - ${USERVARIABLES[USERNAME]}
-  echo "Set password for ${USERVARIABLES[USERNAME]}"
-  passwd ${USERVARIABLES[USERNAME]}
+  runCommand echo "Set password for ${USERVARIABLES[USERNAME]}"
+  runCommand passwd ${USERVARIABLES[USERNAME]}
   ###### enable wheel group for sudoers
-  sed -i "s/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/" /etc/sudoers
+  runCommand sed -i "s/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/" /etc/sudoers
   ###### enable wheel group for sudoers - no password. TEMPORARY
-  sed -i "s/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
-  echo "THIRD" > /home/${USERVARIABLES[USERNAME]}/stage.cfg
+  runCommand sed -i "s/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write THIRD to /home/${USERVARIABLES[USERNAME]}/stage.cfg"
+  else
+    runCommand echo "THIRD" > /home/${USERVARIABLES[USERNAME]}/stage.cfg
+  fi
 
   ##SET OWNERSHIP OF SCRIPT FILES TO BE RUN AFTER REBOOT
-  chown ${USERVARIABLES[USERNAME]}:${USERVARIABLES[USERNAME]} $SCRIPTROOT --recursive
+  runCommand chown ${USERVARIABLES[USERNAME]}:${USERVARIABLES[USERNAME]} $SCRIPTROOT --recursive
 }
 
 
 enableMultilibPackages(){
-  sudo sed -i '/#\[multilib\]/a Include = \/etc\/pacman.d\/mirrorlist' /etc/pacman.conf
-  sudo sed -i "s/#\[multilib\]/[multilib]/" /etc/pacman.conf
+  runCommand sudo sed -i '/#\[multilib\]/a Include = \/etc\/pacman.d\/mirrorlist' /etc/pacman.conf
+  runCommand sudo sed -i "s/#\[multilib\]/[multilib]/" /etc/pacman.conf
 
-  sudo pacman -Syyu
+  runCommand sudo pacman -Syyu
 }
 
 ###### make yay
 makeYay(){
-  cd /home/${USERVARIABLES[USERNAME]}
-  git clone https://aur.archlinux.org/yay.git
-  cd yay
-  makepkg -sri --noconfirm
-  cd /home/${USERVARIABLES[USERNAME]}
+  runCommand cd /home/${USERVARIABLES[USERNAME]}
+  runCommand git clone https://aur.archlinux.org/yay.git
+  runCommand cd yay
+  runCommand makepkg -sri --noconfirm
+  runCommand cd /home/${USERVARIABLES[USERNAME]}
 }
 
 ############ enable network manager/disable dhcpcd
 readyFinalBoot(){
-  sudo systemctl disable dhcpcd@$NETINT.service
-  sudo systemctl disable sshd
-  sudo systemctl enable NetworkManager
-  echo "DONE" > $SCRIPTROOT/stage.cfg
+  runCommand sudo systemctl disable dhcpcd@$NETINT.service
+  runCommand sudo systemctl disable sshd
+  runCommand sudo systemctl enable NetworkManager
+
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write DONE to $SCRIPTROOT/stage.cfg"
+  else
+    runCommand echo "DONE" > $SCRIPTROOT/stage.cfg
+  fi
   ###### Remove no password for sudoers
-  sudo sed -i "s/%wheel ALL=(ALL) NOPASSWD: ALL/# %wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
+  runCommand sudo sed -i "s/%wheel ALL=(ALL) NOPASSWD: ALL/# %wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
 }
 
 #Start the script
