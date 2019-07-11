@@ -1,11 +1,14 @@
 #!/bin/bash
-# Version 1.1
+# Version 1.2
 # Arch Linux INSTALL SCRIPT
 
-#Check what params this has been launched with.
-# Unattended install is default
+#Exit on error
+#set -e
+
+# Check what params this has been launched with.
+# Unattended install is default.
 # -d or --dry-run will *NOT* make any changes to your system - used to export the settings and
-#   show what will be done (Instead of actually doing it)
+#   show what *WOULD* be done
 # -p or --prompt will ask the user to input settings
 while [[ "$#" -gt 0 ]];
 do
@@ -26,14 +29,14 @@ done
 
 # User Variables. Change these if Unattended install
 declare -A USERVARIABLES
-USERVARIABLES[USERNAME]="matt"
-USERVARIABLES[HOSTNAME]="arch-temp"
-USERVARIABLES[BUNDLES]="xfce" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
-USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and -TODO- will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[USERNAME]="username"
+USERVARIABLES[HOSTNAME]="computer-name"
+USERVARIABLES[BUNDLES]="gaming office" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
+USERVARIABLES[DESKTOP]="xfce" #Sets the DE for RDP, and -TODO- will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
-USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
-USERVARIABLES[ROOTPART]="/dev/vda2"
-USERVARIABLES[ROOTMODE]="CREATE"
+USERVARIABLES[BOOTMODE]="LEAVE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
+USERVARIABLES[ROOTPART]="/dev/vg/root"
+USERVARIABLES[ROOTMODE]="LEAVE"
 
 # Script Variables. DO NOT CHANGE THESE
 SCRIPTPATH=$( readlink -m $( type -p $0 ))
@@ -135,6 +138,12 @@ generateSettings(){
     PLATFORM="phys"
   fi
 
+  #Add the selected desktop to the bundles - if it isn't there already
+  if [[ ! "${USERVARIABLES[DESKTOP]}" =~ "${USERVARIABLES[BUNDLES]}" ]]; then
+    echo "Adding ${USERVARIABLES[DESKTOP]} to bundles."
+    USERVARIABLES[BUNDLES]+=" ${USERVARIABLES[DESKTOP]}"
+  fi
+
   #Detect CPU type. Used for setting the microcode (ucode) on the boot loader
   CPUTYPE=$(lscpu | grep Vendor)
   if [[ $CPUTYPE =~ "AMD" ]]; then
@@ -170,7 +179,11 @@ driver(){
     promptSettings
   fi
 
-  INSTALLSTAGE=$(cat "$SCRIPTROOT/stage.cfg")
+  if [[ -f "$SCRIPTROOT/stage.cfg" ]]; then
+    INSTALLSTAGE=$(cat "$SCRIPTROOT/stage.cfg")
+  else
+    INSTALLSTAGE=""
+  fi
   case $INSTALLSTAGE in
     "FIRST"|"")
       echo "FIRST INSTALL STAGE"
@@ -317,8 +330,8 @@ configInstalledBundles(){
   IN=${USERVARIABLES[BUNDLES]}
   arrIN=(${IN// / })
 
-  for bundle in "${arrIN[@]}"
-  do
+    for bundle in "${arrIN[@]}"
+    do
       if [[ ${availableBundles[$bundle]} ]]; then
         bundleConfig="${availableBundles[$bundle]}-Config"
         #Test function exists
@@ -332,6 +345,15 @@ configInstalledBundles(){
         fi
       fi
     done
+
+    #Run the chosen desktop configurator to make sure it's default WM will launch on reboot
+    destkopConfig="${availableBundles[${USERVARIABLES[DESKTOP]}]}-Config"
+    declare -f $destkopConfig > /dev/null
+
+    if [[ $? -eq 0 ]]; then
+      echo "Configuring ${availableBundles[${USERVARIABLES[DESKTOP]}]}.."
+      runCommand $desktopConfig
+    fi
 }
 
 finalInstallStage(){
@@ -349,7 +371,7 @@ exportSettings(){
   EXPORTPARAM="$1=$2"
   ## write all settings to a file on new root
 
-  if [[ $DRYRUN -eq 1 ]]; then
+  if [[ $DRYRUN -eq 0 ]]; then
     echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
   fi
 }
@@ -567,7 +589,12 @@ readyForBoot(){
 }
 
 fixRefind(){
-  ROOTUUID=$(blkid | grep ${USERVARIABLES[ROOTPART]} | grep -oP '(?<= UUID=").*(?=" TYPE)')
+    #ROOTUUID=$(blkid | grep ${USERVARIABLES[ROOTPART]} | grep -oP '(?<= UUID=").*(?=" TYPE)')
+    ROOTUUID=$(blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
+    if [[ $ROOTUUID = "" ]]; then
+      echo "$ROOTPART not found. Using matching EXT4"
+      ROOTUUID=$(blkid | grep ext4 | grep -oP '(?<= UUID=").*(?=" TYPE)')
+    fi
 
 if [[ $DRYRUN -eq 1 ]]; then
   echo "Fix refind. add root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img"
