@@ -32,11 +32,11 @@ declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
 USERVARIABLES[BUNDLES]="gaming office" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
-USERVARIABLES[DESKTOP]="xfce" #Sets the DE for RDP, and -TODO- will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[DESKTOP]="xfce" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
-USERVARIABLES[BOOTMODE]="LEAVE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
-USERVARIABLES[ROOTPART]="/dev/vg/root"
-USERVARIABLES[ROOTMODE]="LEAVE"
+USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
+USERVARIABLES[ROOTPART]="/dev/vda2"
+USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
 SCRIPTPATH=$( readlink -m $( type -p $0 ))
@@ -50,6 +50,14 @@ CPUTYPE=""
 GPUTYPE=""
 INSTALLSTAGE=""
 
+
+if [ ! -f $SCRIPTROOT/softwareBundles.conf ]; then
+  wget https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+fi
+
+if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
+  wget https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.conf
+fi
 
 #Available Software Bundles
 source $SCRIPTROOT/softwareBundles.conf
@@ -179,6 +187,7 @@ driver(){
     promptSettings
   fi
 
+  #Check if stage file exists
   if [[ -f "$SCRIPTROOT/stage.cfg" ]]; then
     INSTALLSTAGE=$(cat "$SCRIPTROOT/stage.cfg")
   else
@@ -347,8 +356,8 @@ configInstalledBundles(){
     done
 
     #Run the chosen desktop configurator to make sure it's default WM will launch on reboot
-    destkopConfig="${availableBundles[${USERVARIABLES[DESKTOP]}]}-Config"
-    declare -f $destkopConfig > /dev/null
+    desktopConfig="${availableBundles[${USERVARIABLES[DESKTOP]}]}-Config"
+    declare -f $desktopConfig > /dev/null
 
     if [[ $? -eq 0 ]]; then
       echo "Configuring ${availableBundles[${USERVARIABLES[DESKTOP]}]}.."
@@ -478,19 +487,18 @@ else
 cat <<EOF > /etc/pacman.d/mirrorlist
 ##
 ## Arch Linux repository mirrorlist
-## Filtered by mirror score from mirror status page
-## Generated on 2019-05-02
+## Generated on 2019-10-14
 ##
+
 ## Australia
-Server = http://archlinux.melbourneitmirror.net/\$repo/os/\$arch
-## Australia
+Server = https://mirror.aarnet.edu.au/pub/archlinux/\$repo/os/\$arch
 Server = http://archlinux.mirror.digitalpacific.com.au/\$repo/os/\$arch
-## Australia
 Server = http://ftp.iinet.net.au/pub/archlinux/\$repo/os/\$arch
-## Australia
-Server = http://ftp.swin.edu.au/archlinux/\$repo/os/\$arch
-## Australia
 Server = http://mirror.internode.on.net/pub/archlinux/\$repo/os/\$arch
+Server = http://archlinux.melbourneitmirror.net/\$repo/os/\$arch
+Server = http://syd.mirror.rackspace.com/archlinux/\$repo/os/\$arch
+Server = https://syd.mirror.rackspace.com/archlinux/\$repo/os/\$arch
+Server = http://ftp.swin.edu.au/archlinux/\$repo/os/\$arch
 EOF
 fi
 }
@@ -498,7 +506,21 @@ fi
 ### Install the base packages
 installArchLinuxBase(){
   setAussieMirrors
-  runCommand pacstrap /mnt base base-devel openssh git
+
+  bundle="base"
+  if [[ ${availableBundles[$bundle]} ]]; then
+  arrayBundle=${availableBundles[$bundle]}[@]
+    for package in "${!arrayBundle}"
+    do
+        aggregatePackagesArr+=("$package")
+    done
+  else
+    echo "Chosen bundle $bundle is invalid. Skipping!"
+  fi
+
+  aggregatePackagesString="${aggregatePackagesArr[@]}"
+
+  runCommand pacstrap /mnt $aggregatePackagesString
 }
 
 ### Generate an fstab file
