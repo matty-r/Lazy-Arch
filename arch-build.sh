@@ -31,7 +31,7 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="gaming office" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
+USERVARIABLES[BUNDLES]="" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
 USERVARIABLES[DESKTOP]="xfce" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
@@ -50,13 +50,12 @@ CPUTYPE=""
 GPUTYPE=""
 INSTALLSTAGE=""
 
-
-if [ ! -f $SCRIPTROOT/softwareBundles.conf ]; then
-  wget https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
+  wget https://raw.githubusercontent.com/matty-r/arch-build/testing/bundleConfigurators.sh
 fi
 
-if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
-  wget https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.conf
+if [ ! -f $SCRIPTROOT/softwareBundles.conf ]; then
+  wget https://raw.githubusercontent.com/matty-r/arch-build/testing/softwareBundles.conf
 fi
 
 #Available Software Bundles
