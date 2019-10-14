@@ -31,7 +31,7 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
+USERVARIABLES[BUNDLES]="xfce" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
 USERVARIABLES[DESKTOP]="xfce" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
