@@ -23,6 +23,10 @@ xfcePackages-Config(){
   sudo systemctl enable lxdm
 }
 
+virtualPackages-Config(){
+  sudo systemctl enable libvirtd
+}
+
 hyperGuestPackages-Config(){
   git clone https://github.com/Microsoft/linux-vm-tools
   cd linux-vm-tools/arch
