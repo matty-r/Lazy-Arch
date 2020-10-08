@@ -59,13 +59,18 @@ rdpPackages-Config(){
 
   echo "allowed_users=anybody" | sudo tee /etc/X11/Xwrapper.config
   case ${USERVARIABLES[DESKTOP]} in
-    "kde" ) SESHNAME="startkde"
+    "kde" ) SESHNAME="startplasma-x11"
       ;;
     "xfce" ) SESHNAME="startxfce4"
       ;;
     "gnome" ) SESHNAME="gnome-session"
       ;;
   esac
+  cp /etc/X11/xinit/xinitrc /home/${USERVARIABLES[USERNAME]}/.xinitrc
+  sudo sed -i "s/twm &/#twm &/"
+  sudo sed -i "s/xclock -geometry 50x50-1+1 &/#xclock -geometry 50x50-1+1 &/"
+  sudo sed -i "s/xterm -geometry 80x50+494+51 &/#xterm -geometry 80x50+494+51 &/"
+  sudo sed -i "s/exec xterm -geometry 80x66+0+0 -name login/#exec xterm -geometry 80x66+0+0 -name login/"
 
   echo "exec dbus-run-session -- $SESHNAME" > /home/${USERVARIABLES[USERNAME]}/.xinitrc
   sudo sed -i "s/use_vsock=true/use_vsock=false/" /etc/xrdp/xrdp.ini
