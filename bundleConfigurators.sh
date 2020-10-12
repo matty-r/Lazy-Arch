@@ -6,7 +6,7 @@ vboxGuestPackages-Config(){
 }
 
 qemuGuestPackages-Config(){
-  sudo sed -i "s/MODULES=()/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
+  sudo sed -i "s/MODULES=""/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
   sudo mkinitcpio -p linux
   sudo systemctl enable qemu-ga.service
 }
@@ -49,6 +49,83 @@ officePackages-Config(){
 
 mediaPackages-Config(){
   sudo systemctl enable bluetooth
+}
+
+themePackages-Config(){
+##Update sections
+~/.config/kdeglobals
+##
+'[General]
+ColorScheme=Qogir
+Name=Qogir
+XftHintStyle=hintslight
+XftSubPixel=rgb
+shadeSortColumn=true
+toolBarFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+
+[Icons]
+Theme=Qogir
+
+[KDE]
+AnimationDurationFactor=0.5
+LookAndFeelPackage=com.github.vinceliuice.Qogir
+ShowDeleteCommand=false
+contrast=0
+widgetStyle=Breeze'
+
+##update section
+~/.config/kwinrc
+##
+'[org.kde.kdecoration2]
+BorderSize=None
+BorderSizeAuto=false
+ButtonsOnLeft=
+ButtonsOnRight=IAX
+library=org.kde.kwin.aurorae
+theme=__aurorae__svg__Qogir'
+
+##create
+~/.config/plasmarc
+##
+'name=Qogir'
+
+##append
+~/.config/kscreenlockerrc
+##
+'Theme=com.github.vinceliuice.Qogir'
+
+##delete and create file
+~/.config/xsettingsd/xsettingsd.conf
+##
+'Net/ThemeName "Qogir-win"
+Gtk/EnableAnimations 1
+Gtk/DecorationLayout ":minimize,maximize,close"
+Gtk/PrimaryButtonWarpsSlider 0
+Gtk/ToolbarStyle 3
+Gtk/MenuImages 1
+Gtk/ButtonImages 1
+Gtk/CursorThemeName "breeze_cursors"
+Net/IconThemeName "Numix-Circle"
+Gtk/FontName "Noto Sans,  10" '
+
+##delete and create file
+~/.config/gtk-3.0/settings.ini
+##
+'[Settings]
+gtk-application-prefer-dark-theme=false
+gtk-button-images=true
+gtk-cursor-theme-name=breeze_cursors
+gtk-decoration-layout=:minimize,maximize,close
+gtk-enable-animations=true
+gtk-fallback-icon-theme=Adwaita
+gtk-font-name=Noto Sans,  10
+gtk-icon-theme-name=Numix-Circle
+gtk-menu-images=true
+gtk-modules=colorreload-gtk-module
+gtk-primary-button-warps-slider=false
+gtk-theme-name=Qogir-win
+gtk-toolbar-style=3'
+
 }
 
 #TODO
