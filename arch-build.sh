@@ -83,11 +83,7 @@ printSettings(){
 #Export out the settings used/selected to installsettings.cfg
 generateSettings(){
   # create settings file
-  if [[ $DRYRUN -eq 1 ]]; then
-    echo "write settings to $SCRIPTROOT/installsettings.cfg"
-  else
     echo "" > "$SCRIPTROOT/installsettings.cfg"
-  fi
 
   $(exportSettings "USERNAME" "${USERVARIABLES[USERNAME]}")
   $(exportSettings "HOSTNAME" "${USERVARIABLES[HOSTNAME]}")
@@ -113,11 +109,13 @@ generateSettings(){
   if [ -d "$EFIPATH" ]
   then
     BOOTTYPE="EFI"
+    $(exportSettings "EFIPATH" $EFIPATH)
   else
     BOOTTYPE="BIOS"
   fi
   $(exportSettings "BOOTTYPE" $BOOTTYPE)
 
+  
   #set comparison to ignore case temporarily
   shopt -s nocasematch
 
@@ -257,32 +255,34 @@ secondInstallStage(){
   echo "10. chroot: Import Settings"
   importSettings
 
-  echo "11. chroot: Set Time"
-  setTime
-
-  echo "12. chroot: Generate locales"
-  genLocales
-
-  echo "13. chroot: Apply HostName"
-  applyHostname
-
-  echo "14. chroot: Add hosts file entries"
-  addHosts
-
-  echo "15. chroot: Generate mkinitcpio"
-  genInit
-
-  echo "16. chroot: Set root password"
+  echo "11. chroot: Set root password"
   rootPassword
 
-  echo "17. chroot: Getting ready to boot"
+  echo "12. chroot: Create new user"
+  createUser
+
+  echo "13. chroot: Set Time"
+  setTime
+
+  echo "14. chroot: Generate locales"
+  genLocales
+
+  echo "15. chroot: Apply HostName"
+  applyHostname
+
+  echo "16. chroot: Add hosts file entries"
+  addHosts
+
+  echo "17. chroot: Generate mkinitcpio"
+  genInit
+
+  echo "18. chroot: Getting ready to boot"
   readyForBoot
 
-  echo "18. chroot: Fix network on boot"
+  echo "19. chroot: Fix network on boot"
   enableNetworkBoot
 
-  echo "19. chroot: Create new user"
-  createUser
+  
 
 }
 
@@ -378,9 +378,10 @@ exportSettings(){
   EXPORTPARAM="$1=$2"
   ## write all settings to a file on new root
 
-  if [[ $DRYRUN -eq 0 ]]; then
-    echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
-  fi
+  ## delete any previously matching settings
+  sed -i "s/^$1=.*//" "$SCRIPTROOT/installsettings.cfg"
+
+  echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
 }
 
 importSettings(){
@@ -397,10 +398,16 @@ importSettings(){
   GPUTYPE=$(retrieveSettings 'GPUTYPE')
   INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
 
-  echo "Imported SCRIPTPATH=${$SCRIPTPATH}"
-  echo "Imported SCRIPTROOT=${$SCRIPTROOT}"
-  echo "Imported BOOTDEVICE=${$BOOTDEVICE}"
-  echo "Imported ROOTDEVICE=${$ROOTDEVICE}"
+  echo "Imported SCRIPTPATH=${SCRIPTPATH}"
+  echo "Imported SCRIPTROOT=${SCRIPTROOT}"
+  echo "Imported BOOTDEVICE=${BOOTDEVICE}"
+  echo "Imported ROOTDEVICE=${ROOTDEVICE}"
+  echo "Imported EFIPATH=${EFIPATH}"
+  echo "Imported BOOTTYPE=${BOOTTYPE}"
+  echo "Imported NETINT=${NETINT}"
+  echo "Imported CPUTYPE=${CPUTYPE}"
+  echo "Imported GPUTYPE=${GPUTYPE}"
+  echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
 }
 
 #retrieveSettings 'SETTINGNAME'
@@ -558,6 +565,10 @@ chrootTime(){
     runCommand echo "SECOND" > $SCRIPTROOT/stage.cfg
   fi
 
+  ##re-export the settings for the new stages (in chroot)
+  $(exportSettings "SCRIPTPATH" "/home/${USERVARIABLES[USERNAME]}/arch-build.sh")
+  $(exportSettings "SCRIPTROOT" "/home/${USERVARIABLES[USERNAME]}")
+
   runCommand mkdir /mnt/home/${USERVARIABLES[USERNAME]}
   runCommand cp $SCRIPTROOT/stage.cfg /mnt/home/${USERVARIABLES[USERNAME]}
   runCommand cp $SCRIPTPATH /mnt/home/${USERVARIABLES[USERNAME]}
@@ -666,8 +677,8 @@ enableMultilibPackages(){
 ###### make yay
 makeYay(){
   runCommand cd /home/${USERVARIABLES[USERNAME]}
-  runCommand git clone https://aur.archlinux.org/yay.git
-  runCommand cd yay
+  runCommand git clone https://aur.archlinux.org/yay-bin.git
+  runCommand cd yay-bin
   runCommand makepkg -sri --noconfirm
   runCommand cd /home/${USERVARIABLES[USERNAME]}
 }
