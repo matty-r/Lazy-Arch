@@ -7,6 +7,13 @@ vboxGuestPackages-Config(){
 
 qemuGuestPackages-Config(){
   sudo sed -i "s/^MODULES=().*/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
+  
+  mkdir ~/xf86-video-qxl-git
+  cd ~/xf86-video-qxl-git
+  curl https://gist.githubusercontent.com/matty-r/200bed9bfea6e920ac71701941f66a06/raw/efdcc657bd955b1977556ebd84285c81fee63e1a/PKGBUILD > PKGBUILD
+  makepkg -sri --noconfirm
+  cd ~
+
   sudo mkinitcpio -p linux
   sudo systemctl enable qemu-ga.service
 }
