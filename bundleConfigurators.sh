@@ -51,7 +51,7 @@ mediaPackages-Config(){
   sudo systemctl enable bluetooth
 }
 
-themePackages-Config(){
+notready-themePackages-Config(){
 ##Update sections
 ~/.config/kdeglobals
 ##

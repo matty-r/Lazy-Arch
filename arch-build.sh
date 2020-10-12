@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 1.2
+# Version 1.3
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
@@ -31,8 +31,8 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="" ## Seperate by single space only (Example "gaming dev qemuGuest"). Found in softwareBundles.conf
-USERVARIABLES[DESKTOP]="" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[BUNDLES]="" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.conf
+USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
@@ -51,11 +51,11 @@ GPUTYPE=""
 INSTALLSTAGE=""
 
 if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
-  wget https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+  curl https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh > bundleConfigurators.sh
 fi
 
 if [ ! -f $SCRIPTROOT/softwareBundles.conf ]; then
-  wget https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.conf
+  curl https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.conf > softwareBundles.conf
 fi
 
 #Available Software Bundles
@@ -457,7 +457,7 @@ formatParts(){
     fi
 
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
-      runCommand mkfs.ext4 -F -F ${USERVARIABLES[ROOTPART]}
+      runCommand mkfs.btrfs -L archRoot -f -f ${USERVARIABLES[ROOTPART]}
     fi
   else
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
@@ -597,35 +597,17 @@ rootPassword(){
 
 ### INSTALL BOOTLOADER AND MICROCODE
 readyForBoot(){
+  DEVICE=$(echo ${USERVARIABLES[ROOTPART]} | sed 's/[0-9]//g')
+  
   if [[ $BOOTTYPE = "EFI" ]]; then
-    runCommand pacman -S --noconfirm refind-efi $CPUTYPE'-ucode'
-    runCommand refind-install
-    runCommand fixRefind
+    runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober
+    runCommand grub-install --target=x86_64-efi --efi-directory=${USERVARIABLES[BOOTPART]} --bootloader-id=GRUB
+    runCommand grub-mkconfig -o /boot/grub/grub.cfg
   else
-    DEVICE=$(echo ${USERVARIABLES[ROOTPART]} | sed 's/[0-9]//g')
-    runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode'
+    runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober
     runCommand grub-install --target=i386-pc $DEVICE
     runCommand grub-mkconfig -o /boot/grub/grub.cfg
   fi
-}
-
-fixRefind(){
-    #ROOTUUID=$(blkid | grep ${USERVARIABLES[ROOTPART]} | grep -oP '(?<= UUID=").*(?=" TYPE)')
-    ROOTUUID=$(blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
-    if [[ $ROOTUUID = "" ]]; then
-      echo "$ROOTPART not found. Using matching EXT4"
-      ROOTUUID=$(blkid | grep ext4 | grep -oP '(?<= UUID=").*(?=" TYPE)')
-    fi
-
-if [[ $DRYRUN -eq 1 ]]; then
-  echo "Fix refind. add root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img"
-else
-runCommand cat <<EOF > /boot/refind_linux.conf
-"Boot with standard options"  "root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img"
-"Boot using fallback initramfs"  "root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux-fallback.img"
-"Boot to terminal"  "root=UUID=$ROOTUUID rw add_efi_memmap initrd=$CPUTYPE-ucode.img initrd=initramfs-linux.img systemd.unit=multi-user.target"
-EOF
-fi
 }
 
 enableNetworkBoot(){
