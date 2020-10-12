@@ -180,7 +180,6 @@ generateSettings(){
   shopt -u nocasematch
 }
 
-
 driver(){
   if [[ $PROMPT -eq 1 ]]; then
     promptSettings
@@ -251,12 +250,12 @@ firstInstallStage(){
   runCommand umount /mnt/boot
   runCommand umount /mnt
 
-  runCommand reboot
+  #runCommand reboot
 }
 
 secondInstallStage(){
-  echo "10. chroot: Generate Settings"
-  generateSettings
+  echo "10. chroot: Import Settings"
+  importSettings
 
   echo "11. chroot: Set Time"
   setTime
@@ -368,8 +367,8 @@ finalInstallStage(){
   echo "23. Readying final boot"
   readyFinalBoot
 
-  echo "Script done. You're good to go after reboot. Rebooting in 20 seconds..."
-  sleep 20
+  echo "Script done. You're good to go after you reboot"
+  
   #We now leave the final chroot - then reboot.
 }
 
@@ -382,6 +381,26 @@ exportSettings(){
   if [[ $DRYRUN -eq 0 ]]; then
     echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
   fi
+}
+
+importSettings(){
+  echo "Importing Settings.."
+  
+  SCRIPTPATH=$(retrieveSettings 'SCRIPTPATH')
+  SCRIPTROOT=$(retrieveSettings 'SCRIPTROOT')
+  BOOTDEVICE=$(retrieveSettings 'BOOTDEVICE')
+  ROOTDEVICE=$(retrieveSettings 'ROOTDEVICE')
+  EFIPATH=$(retrieveSettings 'EFIPATH')
+  BOOTTYPE=$(retrieveSettings 'BOOTTYPE')
+  NETINT=$(retrieveSettings 'NETINT')
+  CPUTYPE=$(retrieveSettings 'CPUTYPE')
+  GPUTYPE=$(retrieveSettings 'GPUTYPE')
+  INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
+
+  echo "Imported SCRIPTPATH=${$SCRIPTPATH}"
+  echo "Imported SCRIPTROOT=${$SCRIPTROOT}"
+  echo "Imported BOOTDEVICE=${$BOOTDEVICE}"
+  echo "Imported ROOTDEVICE=${$ROOTDEVICE}"
 }
 
 #retrieveSettings 'SETTINGNAME'
@@ -600,7 +619,7 @@ readyForBoot(){
   DEVICE=$(echo ${USERVARIABLES[ROOTPART]} | sed 's/[0-9]//g')
   
   if [[ $BOOTTYPE = "EFI" ]]; then
-    runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober
+    runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober efibootmgr
     runCommand grub-install --target=x86_64-efi --efi-directory=${USERVARIABLES[BOOTPART]} --bootloader-id=GRUB
     runCommand grub-mkconfig -o /boot/grub/grub.cfg
   else

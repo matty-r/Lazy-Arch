@@ -18,7 +18,7 @@ There are a lot of Arch Linux install scripts out there, but if you think you'd 
 * Execute arch-build.sh
 
 ```sh
-wget https://raw.githubusercontent.com/matty-r/arch-build/master/arch-build.sh
+curl https://raw.githubusercontent.com/matty-r/arch-build/master/arch-build.sh > arch-build.sh
 chmod +x arch-build.sh
 ./arch-build.sh
 ```
