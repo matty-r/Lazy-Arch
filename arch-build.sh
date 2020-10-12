@@ -653,7 +653,7 @@ readyForBoot(){
   
   if [[ $BOOTTYPE = "EFI" ]]; then
     runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober efibootmgr
-    runCommand grub-install --target=x86_64-efi --efi-directory=${USERVARIABLES[BOOTPART]} --bootloader-id=GRUB
+    runCommand grub-install --target=x86_64-efi --efi-directory=/boot/efi  --bootloader-id=GRUB
     runCommand grub-mkconfig -o /boot/grub/grub.cfg
   else
     runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober
