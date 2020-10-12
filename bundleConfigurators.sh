@@ -6,7 +6,7 @@ vboxGuestPackages-Config(){
 }
 
 qemuGuestPackages-Config(){
-  sudo sed -i "s/MODULES=""/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
+  sudo sed -i "s/^MODULES=().*/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
   sudo mkinitcpio -p linux
   sudo systemctl enable qemu-ga.service
 }
@@ -49,6 +49,11 @@ officePackages-Config(){
 
 mediaPackages-Config(){
   sudo systemctl enable bluetooth
+}
+
+themePackages-Config(){
+  sudo sed -i 's|^#GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/arch-silence/theme.txt"|' /etc/default/grub
+  sudo grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 notready-themePackages-Config(){

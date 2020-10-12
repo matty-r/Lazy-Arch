@@ -288,6 +288,8 @@ secondInstallStage(){
 
 
 thirdInstallStage(){
+  importSettings
+
   echo "20. chroot: Install yay - AUR package manager"
   makeYay
 
@@ -364,6 +366,8 @@ configInstalledBundles(){
 }
 
 finalInstallStage(){
+  importSettings
+
   echo "23. Readying final boot"
   readyFinalBoot
 
@@ -397,6 +401,15 @@ importSettings(){
   CPUTYPE=$(retrieveSettings 'CPUTYPE')
   GPUTYPE=$(retrieveSettings 'GPUTYPE')
   INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
+  
+  USERVARIABLES[BUNDLES]=$(retrieveSettings 'BUNDLES')
+  USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+  USERVARIABLES[HOSTNAME]=$(retrieveSettings 'HOSTNAME')
+  USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
+  USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
+  USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
+  USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+  USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
 
   echo "Imported SCRIPTPATH=${SCRIPTPATH}"
   echo "Imported SCRIPTROOT=${SCRIPTROOT}"
@@ -408,6 +421,15 @@ importSettings(){
   echo "Imported CPUTYPE=${CPUTYPE}"
   echo "Imported GPUTYPE=${GPUTYPE}"
   echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
+
+  echo "Imported USERNAME=${USERVARIABLES[USERNAME]}"
+  echo "Imported HOSTNAME=${USERVARIABLES[HOSTNAME]}"
+  echo "Imported BUNDLES=${USERVARIABLES[BUNDLES]}"
+  echo "Imported DESKTOP=${USERVARIABLES[DESKTOP]}"
+  echo "Imported BOOTPART=${USERVARIABLES[BOOTPART]}"
+  echo "Imported ROOTPART=${USERVARIABLES[ROOTPART]}"
+  echo "Imported ROOTMODE=${USERVARIABLES[ROOTMODE]}"
+  echo "Imported BOOTMODE=${USERVARIABLES[BOOTMODE]}"
 }
 
 #retrieveSettings 'SETTINGNAME'
