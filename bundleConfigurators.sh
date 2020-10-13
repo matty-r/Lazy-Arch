@@ -6,11 +6,13 @@ vboxGuestPackages-Config(){
 }
 
 qemuGuestPackages-Config(){
+  ec
+
   sudo sed -i "s/^MODULES=().*/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
 
   mkdir ~/xf86-video-qxl-git
   cd ~/xf86-video-qxl-git
-  curl https://gist.githubusercontent.com/matty-r/200bed9bfea6e920ac71701941f66a06/raw/efdcc657bd955b1977556ebd84285c81fee63e1a/PKGBUILD > PKGBUILD
+  curl https://gist.githubusercontent.com/matty-r/200bed9bfea6e920ac71701941f66a06/raw/bfb2fa9afdb0d4a56bf9ce010cbe703f00e5a227/PKGBUILD > PKGBUILD
   makepkg -sri --noconfirm
   cd ~
 
