@@ -351,15 +351,6 @@ configInstalledBundles(){
         fi
       fi
     done
-
-    #Run the chosen desktop configurator to make sure it's default WM will launch on reboot
-    desktopConfig="${availableBundles[${USERVARIABLES[DESKTOP]}]}-Config"
-    declare -f $desktopConfig > /dev/null
-
-    if [[ $? -eq 0 ]]; then
-      echo "Configuring ${availableBundles[${USERVARIABLES[DESKTOP]}]}.."
-      runCommand $desktopConfig
-    fi
 }
 
 finalInstallStage(){

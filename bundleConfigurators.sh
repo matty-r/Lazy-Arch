@@ -6,8 +6,6 @@ vboxGuestPackages-Config(){
 }
 
 qemuGuestPackages-Config(){
-  ec
-
   sudo sed -i "s/^MODULES=().*/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
 
   mkdir ~/xf86-video-qxl-git
@@ -22,6 +20,7 @@ qemuGuestPackages-Config(){
 
 kdePackages-Config(){
   sudo systemctl enable sddm
+  
 }
 
 gnomePackages-Config(){
@@ -61,12 +60,12 @@ mediaPackages-Config(){
 }
 
 themePackages-Config(){
-  ROOTUUID=$(blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
-  
+  ROOTUUID=$(sudo blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
 
   sudo sed -i 's|^#GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/arch-silence/theme.txt"|' /etc/default/grub
   sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='${ROOTUUID}':root"|' /etc/default/grub
   sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
+
   sudo grub-mkconfig -o /boot/grub/grub.cfg
 }
 
