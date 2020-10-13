@@ -20,7 +20,9 @@ qemuGuestPackages-Config(){
 
 kdePackages-Config(){
   sudo systemctl enable sddm
-  
+  echo "[Autologin]" | sudo tee /etc/sddm.conf.d/autologin.conf
+  echo "User=${USERVARIABLES[USERNAME]}" | sudo tee -a /etc/sddm.conf.d/autologin.conf
+  echo "Session=plasma.desktop" | sudo tee -a /etc/sddm.conf.d/autologin.conf
 }
 
 gnomePackages-Config(){
