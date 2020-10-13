@@ -31,7 +31,7 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.conf
+USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.conf
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
@@ -281,9 +281,6 @@ secondInstallStage(){
 
   echo "19. chroot: Fix network on boot"
   enableNetworkBoot
-
-  
-
 }
 
 
@@ -505,19 +502,51 @@ formatParts(){
     fi
 
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
-      runCommand mkfs.btrfs -L archRoot -f -f ${USERVARIABLES[ROOTPART]}
+      ##Adjust for encryption
+      echo "Set up encryption for ${USERVARIABLES[ROOTPART]}"
+      runCommand cryptsetup -q -y -v --cipher=aes-xts-plain64 --key-size 512 --hash=sha512 luksFormat ${USERVARIABLES[ROOTPART]}
+      runCommand cryptsetup luksOpen ${USERVARIABLES[ROOTPART]} luks
+
+      echo "Make btrfs on /dev/mapper/luks"
+      runCommand mkfs.btrfs -L archRoot -f -f /dev/mapper/luks
+      #runCommand mkfs.btrfs -L archRoot -f -f ${USERVARIABLES[ROOTPART]}
     fi
   else
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
-      runCommand mkfs.ext4 -F -F ${USERVARIABLES[ROOTPART]}
+      runCommand mkfs.ext4 -f -f ${USERVARIABLES[ROOTPART]}
     fi
   fi
 }
 
+
 ## Mount the file systems
 mountParts(){
   if [[ $BOOTTYPE = "EFI" ]]; then
-    runCommand mount ${USERVARIABLES[ROOTPART]} /mnt
+    #mount encrypted partition instead
+    echo "Mount new luks partition..."
+    runCommand mount -o compress=zstd /dev/mapper/luks /mnt
+
+    #btrfs sub volumes
+    runCommand cd /mnt
+    runCommand btrfs subvolume create @
+    runCommand btrfs subvolume create @home
+    runCommand btrfs subvolume create @log
+    runCommand btrfs subvolume create @srv
+    runCommand btrfs subvolume create @pkg
+    runCommand btrfs subvolume create @tmp
+    runCommand cd ~
+    runCommand umount /mnt
+    runCommand mount -o compress=zstd,subvol=@ /dev/mapper/luks /mnt
+
+    runCommand cd /mnt
+    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp}
+
+    runCommand mount -o compress=zstd,subvol=@home /dev/mapper/luks home
+    runCommand mount -o compress=zstd,subvol=@log /dev/mapper/luks var/log
+    runCommand mount -o compress=zstd,subvol=@pkg /dev/mapper/luks var/cache/pacman/pkg
+    runCommand mount -o compress=zstd,subvol=@srv /dev/mapper/luks srv
+    runCommand mount -o compress=zstd,subvol=@tmp /dev/mapper/luks tmp
+
     runCommand mkdir /mnt/boot
     runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
   else
@@ -639,6 +668,7 @@ addHosts(){
 
 ### GENERATE INITRAMFS
 genInit(){
+  sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
   runCommand mkinitcpio -p linux
 }
 
