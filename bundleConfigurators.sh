@@ -20,9 +20,10 @@ qemuGuestPackages-Config(){
 
 kdePackages-Config(){
   sudo systemctl enable sddm
-  echo "[Autologin]" | sudo tee /etc/sddm.conf.d/autologin.conf
-  echo "User=${USERVARIABLES[USERNAME]}" | sudo tee -a /etc/sddm.conf.d/autologin.conf
-  echo "Session=plasma.desktop" | sudo tee -a /etc/sddm.conf.d/autologin.conf
+
+  sudo sed -i 's|^User=.*|User='${USERVARIABLES[USERNAME]}'|' /etc/sddm.conf.d/kde_settings.conf
+  sudo sed -i 's|^Session=.*|Session=plasma|' /etc/sddm.conf.d/kde_settings.conf
+  sudo sed -i 's|^Current=.*|Current=breeze|' /etc/sddm.conf.d/kde_settings.conf
 }
 
 gnomePackages-Config(){
