@@ -130,15 +130,55 @@ widgetStyle=Breeze
 Theme=Numix-Circle
 EOF
 
-##update section
 cat << EOF | tee ~/.config/kwinrc
+[Compositing]
+OpenGLIsUnsafe=false
+
+[Effect-Cube]
+BorderActivateCylinder=9
+BorderActivateSphere=9
+
+[Effect-DesktopGrid]
+BorderActivate=7
+
+[Effect-PresentWindows]
+BorderActivate=3
+BorderActivateAll=9
+BorderActivateClass=9
+
+[ElectricBorders]
+Bottom=None
+BottomRight=None
+Right=None
+Top=None
+TopLeft=None
+TopRight=None
+
+[Plugins]
+kwin4_effect_squashEnabled=false
+magiclampEnabled=true
+
+[TabBox]
+BorderActivate=9
+DesktopLayout=org.kde.breeze.desktop
+DesktopListLayout=org.kde.breeze.desktop
+LayoutName=org.kde.breeze.desktop
+
+[Windows]
+ElectricBorderCooldown=350
+ElectricBorderCornerRatio=0.25
+ElectricBorderDelay=150
+ElectricBorderMaximize=true
+ElectricBorderTiling=true
+ElectricBorders=0
+
 [org.kde.kdecoration2]
 BorderSize=None
 BorderSizeAuto=false
 ButtonsOnLeft=
 ButtonsOnRight=IAX
 library=org.kde.kwin.aurorae
-theme=__aurorae__svg__Qogir'
+theme=__aurorae__svg__Qogir
 EOF
 
 ##create

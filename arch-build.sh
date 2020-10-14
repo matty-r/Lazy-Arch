@@ -4,7 +4,6 @@
 
 #Exit on error
 #set -e
-
 # Check what params this has been launched with.
 # Unattended install is default.
 # -d or --dry-run will *NOT* make any changes to your system - used to export the settings and
@@ -210,6 +209,7 @@ driver(){
 }
 
 firstInstallStage(){
+  script arch-build-stage1.log
   echo "1. Generate Settings"
   generateSettings
 
@@ -245,13 +245,13 @@ firstInstallStage(){
     arch-chroot /mnt su ${USERVARIABLES[USERNAME]} ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
   fi
 
-  runCommand umount /mnt/boot
-  runCommand umount /mnt
+  runCommand umount -R /mnt
 
   #runCommand reboot
 }
 
 secondInstallStage(){
+  script arch-build-stage2.log
   echo "10. chroot: Import Settings"
   importSettings
 
@@ -285,6 +285,8 @@ secondInstallStage(){
 
 
 thirdInstallStage(){
+  script arch-build-stage3.log
+
   importSettings
 
   echo "20. chroot: Install yay - AUR package manager"
