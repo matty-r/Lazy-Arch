@@ -1,4 +1,5 @@
 #!/bin/bash
+# bundleConfigurators
 
 vboxGuestPackages-Config(){
   sudo systemctl enable vboxservice.service
@@ -19,11 +20,31 @@ qemuGuestPackages-Config(){
 }
 
 kdePackages-Config(){
+
+  #enable SDDM and set autologin, also set theme to breeze
   sudo systemctl enable sddm
+  sudo mkdir /etc/sddm.conf.d
+
+  cat << EOF | sudo tee -a /etc/sddm.conf.d/kde_settings.conf
+[Autologin]
+Relogin=false
+Session=plasma
+User=
+
+[General]
+HaltCommand=/usr/bin/systemctl poweroff
+RebootCommand=/usr/bin/systemctl reboot
+
+[Theme]
+Current=breeze
+
+[Users]
+MaximumUid=60000
+MinimumUid=1000
+EOF
 
   sudo sed -i 's|^User=.*|User='${USERVARIABLES[USERNAME]}'|' /etc/sddm.conf.d/kde_settings.conf
-  sudo sed -i 's|^Session=.*|Session=plasma|' /etc/sddm.conf.d/kde_settings.conf
-  sudo sed -i 's|^Current=.*|Current=breeze|' /etc/sddm.conf.d/kde_settings.conf
+
 }
 
 gnomePackages-Config(){
@@ -63,20 +84,19 @@ mediaPackages-Config(){
 }
 
 themePackages-Config(){
+  ##Apply grub theming fixes
   ROOTUUID=$(sudo blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
-
   sudo sed -i 's|^#GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/arch-silence/theme.txt"|' /etc/default/grub
   sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='${ROOTUUID}':root"|' /etc/default/grub
   sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
-
   sudo grub-mkconfig -o /boot/grub/grub.cfg
-}
 
-notready-themePackages-Config(){
-##Update sections
-~/.config/kdeglobals
-##
-'[General]
+  ##temporary fix for the dark theme colours being incorrect
+  sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
+
+##Apply the themes to qogir and icons set to numix
+cat << EOF | tee ~/.config/kdeglobals
+[General]
 ColorScheme=Qogir
 Name=Qogir
 XftHintStyle=hintslight
@@ -85,40 +105,55 @@ shadeSortColumn=true
 toolBarFont=Noto Sans,10,-1,5,50,0,0,0,0,0
 
 [Icons]
-Theme=Qogir
+Theme=Numix-Circle
 
 [KDE]
 AnimationDurationFactor=0.5
 LookAndFeelPackage=com.github.vinceliuice.Qogir
 ShowDeleteCommand=false
 contrast=0
-widgetStyle=Breeze'
+widgetStyle=Breeze
+EOF
+
+cat << EOF | tee ~/.kde4/share/config/kdeglobals
+[General]
+ColorScheme=Qogir
+Name=Qogir
+font=Noto Sans,10,-1,5,50,0,0,0,0,0
+menuFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+shadeSortColumn=true
+smallestReadableFont=Noto Sans,8,-1,5,50,0,0,0,0,0
+toolBarFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+widgetStyle=Breeze
+
+[Icons]
+Theme=Numix-Circle
+EOF
 
 ##update section
-~/.config/kwinrc
-##
-'[org.kde.kdecoration2]
+cat << EOF | tee ~/.config/kwinrc
+[org.kde.kdecoration2]
 BorderSize=None
 BorderSizeAuto=false
 ButtonsOnLeft=
 ButtonsOnRight=IAX
 library=org.kde.kwin.aurorae
 theme=__aurorae__svg__Qogir'
+EOF
 
 ##create
-~/.config/plasmarc
-##
-'name=Qogir'
+cat << EOF | tee ~/.config/plasmarc
+name=Qogir
+EOF
 
 ##append
-~/.config/kscreenlockerrc
-##
-'Theme=com.github.vinceliuice.Qogir'
+cat << EOF | tee -a ~/.config/kscreenlockerrc
+Theme=com.github.vinceliuice.Qogir
+EOF
 
 ##delete and create file
-~/.config/xsettingsd/xsettingsd.conf
-##
-'Net/ThemeName "Qogir-win"
+cat << EOF | tee ~/.config/xsettingsd/xsettingsd.conf
+Net/ThemeName "Qogir-win"
 Gtk/EnableAnimations 1
 Gtk/DecorationLayout ":minimize,maximize,close"
 Gtk/PrimaryButtonWarpsSlider 0
@@ -127,12 +162,12 @@ Gtk/MenuImages 1
 Gtk/ButtonImages 1
 Gtk/CursorThemeName "breeze_cursors"
 Net/IconThemeName "Numix-Circle"
-Gtk/FontName "Noto Sans,  10" '
+Gtk/FontName "Noto Sans,  10"
+EOF
 
 ##delete and create file
-~/.config/gtk-3.0/settings.ini
-##
-'[Settings]
+cat << EOF | tee ~/.config/gtk-3.0/settings.ini
+[Settings]
 gtk-application-prefer-dark-theme=false
 gtk-button-images=true
 gtk-cursor-theme-name=breeze_cursors
@@ -145,7 +180,24 @@ gtk-menu-images=true
 gtk-modules=colorreload-gtk-module
 gtk-primary-button-warps-slider=false
 gtk-theme-name=Qogir-win
-gtk-toolbar-style=3'
+gtk-toolbar-style=3
+EOF
+
+cat << EOF | tee ~/.gtkrc-2.0
+gtk-enable-animations=1
+
+gtk-cursor-theme-name="breeze_cursors"
+
+gtk-primary-button-warps-slider=0
+gtk-cursor-theme-neme="breeze_cursors"
+gtk-font-name="Noto Sans,  10"
+gtk-theme-name="Qogir-win"
+gtk-icon-theme-name="Numix-Circle"
+gtk-fallback-icon-theme="Adwaita"
+gtk-toolbar-style=3
+gtk-menu-images=1
+gtk-button-images=1
+EOF
 
 }
 
