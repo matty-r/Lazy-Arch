@@ -10,12 +10,16 @@ Created because I install Arch Linux on almost all of my PCs (Desktops, Laptops,
 
 There are a lot of Arch Linux install scripts out there, but if you think you'd like to help then I won't stop you - the more the merrier.
 
+### Script Overview
+
+Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, and use BTRFS for the file system. There will be various base packages installed (softwareBundles/archBasePackages), GRUB for the boot loader, plus modules needed for handling the encrypted Root partition. 
+
 ### Usage
 
 * Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
 * Edit arch-build.sh with the appropriate bundles you need
 * Set arch-build.sh to executable
-* Execute arch-build.sh
+* Execute arch-build.sh, if you wish to log the entire install, execute with script -c ./arch-build.sh arch-build.log 
 
 ```sh
 curl https://raw.githubusercontent.com/matty-r/arch-build/master/arch-build.sh > arch-build.sh

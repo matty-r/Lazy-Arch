@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 1.7
+# Version 1.8
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
@@ -209,7 +209,6 @@ driver(){
 }
 
 firstInstallStage(){
-  script arch-build-stage1.log
   echo "1. Generate Settings"
   generateSettings
 
@@ -251,7 +250,6 @@ firstInstallStage(){
 }
 
 secondInstallStage(){
-  script arch-build-stage2.log
   echo "10. chroot: Import Settings"
   importSettings
 
@@ -285,8 +283,6 @@ secondInstallStage(){
 
 
 thirdInstallStage(){
-  script arch-build-stage3.log
-
   importSettings
 
   echo "20. chroot: Install yay - AUR package manager"

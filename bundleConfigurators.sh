@@ -98,7 +98,7 @@ themePackages-Config(){
 cat << EOF | tee ~/.config/kdeglobals
 [General]
 ColorScheme=Qogir
-Name=Qogir
+Name=Breeze
 XftHintStyle=hintslight
 XftSubPixel=rgb
 shadeSortColumn=true
@@ -109,7 +109,6 @@ Theme=Numix-Circle
 
 [KDE]
 AnimationDurationFactor=0.5
-LookAndFeelPackage=com.github.vinceliuice.Qogir
 ShowDeleteCommand=false
 contrast=0
 widgetStyle=Breeze
@@ -183,11 +182,13 @@ EOF
 
 ##create
 cat << EOF | tee ~/.config/plasmarc
-name=Qogir
+[Theme]
+name=Qogir-dark
 EOF
 
 ##append
-cat << EOF | tee -a ~/.config/kscreenlockerrc
+cat << EOF | tee ~/.config/kscreenlockerrc
+[Greeter]
 Theme=com.github.vinceliuice.Qogir
 EOF
 
