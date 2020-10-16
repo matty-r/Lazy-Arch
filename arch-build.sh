@@ -30,7 +30,7 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.conf
+USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
@@ -50,15 +50,15 @@ GPUTYPE=""
 INSTALLSTAGE=""
 
 if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
-  curl https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh > bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
 fi
 
-if [ ! -f $SCRIPTROOT/softwareBundles.conf ]; then
-  curl https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.conf > softwareBundles.conf
+if [ ! -f $SCRIPTROOT/softwareBundles.sh ]; then
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.sh
 fi
 
 #Available Software Bundles
-source $SCRIPTROOT/softwareBundles.conf
+source $SCRIPTROOT/softwareBundles.sh
 #Addtional configurations needed for selected bundles
 source $SCRIPTROOT/bundleConfigurators.sh
 
@@ -612,7 +612,7 @@ chrootTime(){
   runCommand mkdir /mnt/home/${USERVARIABLES[USERNAME]}
   runCommand cp $SCRIPTROOT/stage.cfg /mnt/home/${USERVARIABLES[USERNAME]}
   runCommand cp $SCRIPTPATH /mnt/home/${USERVARIABLES[USERNAME]}
-  runCommand cp $SCRIPTROOT/softwareBundles.conf /mnt/home/${USERVARIABLES[USERNAME]}
+  runCommand cp $SCRIPTROOT/softwareBundles.sh /mnt/home/${USERVARIABLES[USERNAME]}
   runCommand cp $SCRIPTROOT/bundleConfigurators.sh /mnt/home/${USERVARIABLES[USERNAME]}
   runCommand cp $SCRIPTROOT/installsettings.cfg /mnt/home/${USERVARIABLES[USERNAME]}
 }

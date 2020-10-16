@@ -1,6 +1,22 @@
 #!/bin/bash
 # bundleConfigurators
 
+# if launched with a parameter, called that function, or list available functions with -h
+while [[ "$#" -gt 0 ]];
+do
+  case $1 in
+    -h|--help) 
+        echo "Available configs"
+        RUNCONFIG='compgen -A function'
+    ;;
+    *)
+      RUNCONFIG=${1}Packages-Config
+    ;;
+  esac
+  shift
+done
+
+
 vboxGuestPackages-Config(){
   sudo systemctl enable vboxservice.service
   echo "\"FS0:\EFI\refind\refind_x64.efi\"" | sudo tee -a /boot/startup.nsh
@@ -81,17 +97,6 @@ themePackages-Config(){
   sed -i 's|^plugin=org.kde.plasma.taskmanager.*|plugin=com.github.zren.tiledmenu|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
   sed -i 's|^org.kde.plasma.taskmanager.*|plugin=org.kde.plasma.icontasks|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
 
-  #kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 22 --group Applets --group 41 --key immutability 1
-  #kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 22 --group Applets --group 41 --key plugin com.github.zren.tiledmenu
-
-  #kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 22 --group Applets --group 41 --group Configuration --group General --key tileModel '=W10='
-
-  #kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 22 --group Applets --group 41 --group Shortcuts --key global Alt+F1
-
-  #kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 22 --group Applets --group 42 --key immutability 1 
-  #kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 22 --group Applets --group 42 --key plugin org.kde.plasma.icontasks
-
-
   ##temporary fix for the dark theme colours being incorrect
   sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
 
@@ -157,7 +162,7 @@ themePackages-Config(){
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-menu-images 1
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-button-images 1
 
-  qdbus org.kde.KWin /KWin reconfigure
+  
 }
 
 #TODO
@@ -184,3 +189,7 @@ rdpPackages-Config(){
   echo "exec dbus-run-session -- $SESHNAME" > /home/${USERVARIABLES[USERNAME]}/.xinitrc
   sudo sed -i "s/use_vsock=true/use_vsock=false/" /etc/xrdp/xrdp.ini
 }
+
+if [[ $RUNCONFIG ]]; then
+    $RUNCONFIG
+fi

@@ -1,3 +1,8 @@
+#!/bin/bash
+SOFTWAREBUNDLESPATH=$( readlink -m $( type -p $0 ))
+SOFTWAREBUNDLESROOT=${SOFTWAREBUNDLESPATH%/*}
+
+
 declare -a archBasePackages gamingPackages nvidiaPackages virtualPackages rdpPackages dailyPackages officePackages mediaPackages
 declare -a adminPackages devPackages themePackages kdePackages gnomePackages xfcePackages
 declare -a vboxGuestPackages qemuGuestPackages hyperGuestPackages amdgpuPackages esxiGuestPackages
@@ -34,8 +39,19 @@ availableBundles[kde]=kdePackages
 availableBundles[gnome]=gnomePackages
 availableBundles[xfce]=xfcePackages
 
+# if launched with a parameter, call that function, or list available functions with -h
+while [[ "$#" -gt 0 ]];
+do
+  case $1 in
+    *)
+      INSTALLPACKAGES+=("${1}")
+    ;;
+  esac
+  shift
+done
+
 #Arch Linux Base
-archBasePackages=(base linux linux-firmware cryptsetup sudo device-mapper e2fsprogs inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs)
+archBasePackages=(base linux linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
 
 #Software Packages
 gamingPackages=(steam obs-studio discord lib32-fontconfig)
@@ -43,8 +59,8 @@ virtualPackages=(libvirt qemu virt-manager ebtables dnsmasq ovmf)
 rdpPackages=(xrdp-git xorgxrdp-git xorg-xinit xterm xorg-xrdb)
 dailyPackages=(protonmail-bridge nextcloud-client)
 officePackages=(cups cups-pdf tesseract tesseract-data-eng pdftk-bin libreoffice-fresh okular masterpdfeditor-free gscan2pdf)
-mediaPackages=(spotify gimp pulseaudio-bluetooth vlc)
-adminPackages=(gparted ntfs-3g htop rsync filezilla putty networkmanager-openvpn remmina freerdp-git gnome-keyring wget fwupd)
+mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc) 
+adminPackages=(htop rsync filezilla putty networkmanager-openvpn remmina-git freerdp-git gnome-keyring wget fwupd)
 devPackages=(visual-studio-code-bin qtcreator)
 
 #Wine Gaming Packages
@@ -67,6 +83,39 @@ amdgpuPackages=(mesa lib32-mesa xf86-video-amdgpu vulkan-radeon lib32-vulkan-rad
 themePackages=(numix-circle-icon-theme-git qogir-gtk-theme-git qogir-kde-theme-git arch-silence-grub-theme-git)
 
 ##Desktop Environment Packages
-kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm)
+kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager)
 gnomePackages=(gnome gnome-extra networkmanager)
 xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet)
+
+
+installSoftwareBundles(){
+  IN=${@}
+  arrIN=(${IN// / })
+  declare -a aggregatePackagesArr
+  aggregatePackagesString=""
+
+  for bundle in "${arrIN[@]}"
+  do
+      if [[ ${availableBundles[$bundle]} ]]; then
+        arrayBundle=${availableBundles[$bundle]}[@]
+        for package in "${!arrayBundle}"
+        do
+            echo "Installing ${!arrayBundle}"
+            yay -S "${!arrayBundle}"
+            if [ -f $SOFTWAREBUNDLESROOT/bundleConfigurators.sh ]; then
+                read -p "Run configurator (if available) for $bundle?:" answer
+                if [[ "$answer" =~ "y" ]]; then
+                    ./bundleConfigurators.sh $bundle
+                fi
+            fi
+        done
+      else
+        echo "Chosen bundle $bundle is invalid. Skipping!"
+      fi
+  done  
+}
+
+
+if [[ $INSTALLPACKAGES ]]; then
+    installSoftwareBundles ${INSTALLPACKAGES[*]}
+fi
