@@ -31,7 +31,7 @@ qemuGuestPackages-Config(){
   makepkg -sri --noconfirm
   cd ~
 
-  sudo mkinitcpio -p linux
+  sudo mkinitcpio -P
   sudo systemctl enable qemu-ga.service
 }
 

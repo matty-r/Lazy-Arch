@@ -48,13 +48,14 @@ NETINT=""
 CPUTYPE=""
 GPUTYPE=""
 INSTALLSTAGE=""
+KERNEL="linux-zen"
 
 if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/bundleConfigurators.sh
 fi
 
 if [ ! -f $SCRIPTROOT/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/softwareBundles.sh
 fi
 
 #Available Software Bundles
@@ -103,6 +104,7 @@ generateSettings(){
   #Find the currently used interface - used to enable dhcpcd on that interface
   NETINT=$(ip link | grep "BROADCAST,MULTICAST,UP,LOWER_UP" | grep -oP '(?<=: ).*(?=: )')
   $(exportSettings "NETINT" $NETINT)
+  $(exportSettings "KERNEL" $KERNEL)
 
   #Determine if it's an EFI install or not
   if [ -d "$EFIPATH" ]
@@ -582,6 +584,7 @@ installArchLinuxBase(){
   else
     echo "Chosen bundle $bundle is invalid. Skipping!"
   fi
+  aggregatePackagesArr+=("$KERNEL")
 
   aggregatePackagesString="${aggregatePackagesArr[@]}"
 
@@ -658,7 +661,7 @@ addHosts(){
 ### GENERATE INITRAMFS
 genInit(){
   sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
-  runCommand mkinitcpio -p linux
+  runCommand mkinitcpio -p $KERNEL
 }
 
 ### ROOT PASSWORD

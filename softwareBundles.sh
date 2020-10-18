@@ -51,7 +51,7 @@ do
 done
 
 #Arch Linux Base
-archBasePackages=(base linux linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
+archBasePackages=(base linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
 
 #Software Packages
 gamingPackages=(steam obs-studio discord lib32-fontconfig)
