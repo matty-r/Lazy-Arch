@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 2.0
+# Version 2.2
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
@@ -32,6 +32,7 @@ USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
 USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
@@ -48,7 +49,6 @@ NETINT=""
 CPUTYPE=""
 GPUTYPE=""
 INSTALLSTAGE=""
-KERNEL="linux-zen"
 
 if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
   curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/bundleConfigurators.sh
@@ -104,7 +104,7 @@ generateSettings(){
   #Find the currently used interface - used to enable dhcpcd on that interface
   NETINT=$(ip link | grep "BROADCAST,MULTICAST,UP,LOWER_UP" | grep -oP '(?<=: ).*(?=: )')
   $(exportSettings "NETINT" $NETINT)
-  $(exportSettings "KERNEL" $KERNEL)
+  $(exportSettings "KERNEL" "${USERVARIABLES[KERNEL]}")
 
   #Determine if it's an EFI install or not
   if [ -d "$EFIPATH" ]
@@ -148,6 +148,12 @@ generateSettings(){
   if [[ ! "${USERVARIABLES[DESKTOP]}" =~ "${USERVARIABLES[BUNDLES]}" ]]; then
     echo "Adding ${USERVARIABLES[DESKTOP]} to bundles."
     USERVARIABLES[BUNDLES]+=" ${USERVARIABLES[DESKTOP]}"
+  fi
+
+  #Add the selected linux kernel to the bundles - if it isn't there already
+  if [[ ! "${USERVARIABLES[KERNEL]}" =~ "${USERVARIABLES[BUNDLES]}" ]]; then
+    echo "Adding ${USERVARIABLES[KERNEL]} to bundles."
+    USERVARIABLES[BUNDLES]+=" ${USERVARIABLES[KERNEL]}"
   fi
 
   #Detect CPU type. Used for setting the microcode (ucode) on the boot loader
@@ -546,33 +552,25 @@ mountParts(){
 }
 
 
-setAussieMirrors(){
+setLocalMirrors(){
 if [[ $DRYRUN -eq 1 ]]; then
-  echo "Write Aussie Mirrors to /etc/pacman.d/mirrorlist"
+  echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
 else
 
-cat <<EOF > /etc/pacman.d/mirrorlist
-##
-## Arch Linux repository mirrorlist
-## Generated on 2019-10-14
-##
+LOCALJSON=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
+LOCALARRAY=($(echo $LOCALJSON | grep -Po '"alpha2":.*?[^\\]"' | tr ':' $'\n'))
+COUNTRYCODE=$(echo ${LOCALARRAY[1]} | sed 's/"//g')
+echo $COUNTRYCODE
 
-## Australia
-Server = https://mirror.aarnet.edu.au/pub/archlinux/\$repo/os/\$arch
-Server = http://archlinux.mirror.digitalpacific.com.au/\$repo/os/\$arch
-Server = http://ftp.iinet.net.au/pub/archlinux/\$repo/os/\$arch
-Server = http://mirror.internode.on.net/pub/archlinux/\$repo/os/\$arch
-Server = http://archlinux.melbourneitmirror.net/\$repo/os/\$arch
-Server = http://syd.mirror.rackspace.com/archlinux/\$repo/os/\$arch
-Server = https://syd.mirror.rackspace.com/archlinux/\$repo/os/\$arch
-Server = http://ftp.swin.edu.au/archlinux/\$repo/os/\$arch
-EOF
-fi
+runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
+
 }
 
 ### Install the base packages
 installArchLinuxBase(){
-  setAussieMirrors
+  setLocalMirrors
+  #Arch Linux Base
+  archBasePackages=(base linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
 
   bundle="base"
   if [[ ${availableBundles[$bundle]} ]]; then
@@ -584,7 +582,6 @@ installArchLinuxBase(){
   else
     echo "Chosen bundle $bundle is invalid. Skipping!"
   fi
-  aggregatePackagesArr+=("$KERNEL")
 
   aggregatePackagesString="${aggregatePackagesArr[@]}"
 
@@ -661,7 +658,7 @@ addHosts(){
 ### GENERATE INITRAMFS
 genInit(){
   sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
-  runCommand mkinitcpio -p $KERNEL
+  runCommand mkinitcpio -P
 }
 
 ### ROOT PASSWORD
