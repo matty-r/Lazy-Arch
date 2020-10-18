@@ -341,22 +341,24 @@ installSelectedBundles(){
 configInstalledBundles(){
   IN=${USERVARIABLES[BUNDLES]}
   arrIN=(${IN// / })
-
-    for bundle in "${arrIN[@]}"
-    do
-      if [[ ${availableBundles[$bundle]} ]]; then
-        bundleConfig="${availableBundles[$bundle]}-Config"
-        #Test function exists
-        declare -f $bundleConfig > /dev/null
-        #Run the function if it exists
-        if [[ $? -eq 0 ]]; then
-          echo "Configuring ${availableBundles[$bundle]}.."
-          runCommand $bundleConfig
-        else
-          echo "No additional config necessary for ${availableBundles[$bundle]}"
-        fi
+  
+  for bundle in "${arrIN[@]}"
+  do
+    if [[ ${availableBundles[$bundle]} ]]; then
+      bundleConfig="${availableBundles[$bundle]}-Config"
+      #Test function exists
+      declare -f $bundleConfig > /dev/null
+      #Run the function if it exists
+      if [[ $? -eq 0 ]]; then
+        echo "Configuring ${availableBundles[$bundle]}.."
+        runCommand $bundleConfig
+      else
+        echo "No additional config necessary for ${availableBundles[$bundle]}"
       fi
-    done
+    fi
+  done
+
+  runCommand btrfsPackages-Config
 }
 
 finalInstallStage(){
@@ -570,21 +572,10 @@ runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}
 installArchLinuxBase(){
   setLocalMirrors
   #Arch Linux Base
-  archBasePackages=(base linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
 
-  bundle="base"
-  if [[ ${availableBundles[$bundle]} ]]; then
-  arrayBundle=${availableBundles[$bundle]}[@]
-    for package in "${!arrayBundle}"
-    do
-        aggregatePackagesArr+=("$package")
-    done
-  else
-    echo "Chosen bundle $bundle is invalid. Skipping!"
-  fi
+  archBasePackages=(base linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget snapper grub-btrfs snap-pac)
 
-  aggregatePackagesString="${aggregatePackagesArr[@]}"
-
+  aggregatePackagesString="${archBasePackages[@]}"
   runCommand pacstrap /mnt $aggregatePackagesString
 }
 

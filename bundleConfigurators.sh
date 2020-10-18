@@ -16,6 +16,17 @@ do
   shift
 done
 
+btrfsPackages-Config(){
+  sudo snapper -c root create-config /
+  sudo btrfs sub del /.snapshots/
+  mkdir /.snapshots
+  echo "${USERVARIABLES[ROOTPART]} 	/.snapshots  		btrfs     	rw,relatime,compress=lzo,ssd,space_cache=v2,subvol=@snapshots	0 0" | sudo tee -a /etc/fstab
+  sudo mount /.snapshots/
+  sudo systemctl enable grub-btrfs.path
+  sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
+  sudo grub-mkconfig -o /boot/grub/grub.cfg
+  sudo systemctl enable snapper-boot.timer
+}
 
 vboxGuestPackages-Config(){
   sudo systemctl enable vboxservice.service
