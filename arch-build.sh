@@ -150,12 +150,6 @@ generateSettings(){
     USERVARIABLES[BUNDLES]+=" ${USERVARIABLES[DESKTOP]}"
   fi
 
-  #Add the selected linux kernel to the bundles - if it isn't there already
-  if [[ ! "${USERVARIABLES[KERNEL]}" =~ "${USERVARIABLES[BUNDLES]}" ]]; then
-    echo "Adding ${USERVARIABLES[KERNEL]} to bundles."
-    USERVARIABLES[BUNDLES]+=" ${USERVARIABLES[KERNEL]}"
-  fi
-
   #Detect CPU type. Used for setting the microcode (ucode) on the boot loader
   CPUTYPE=$(lscpu | grep Vendor)
   if [[ $CPUTYPE =~ "AMD" ]]; then
@@ -252,8 +246,10 @@ firstInstallStage(){
     arch-chroot /mnt su ${USERVARIABLES[USERNAME]} ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
   fi
 
-  runCommand umount -R /mnt
-
+  echo "Done. Perform reboot when ready."
+  ##runCommand umount -R /mnt
+  
+  ##runCommand arch-chroot /mnt
   #runCommand reboot
 }
 
@@ -365,11 +361,7 @@ finalInstallStage(){
   importSettings
 
   echo "23. Readying final boot"
-  readyFinalBoot
-
-  echo "Script done. You're good to go after you reboot"
-  
-  #We now leave the final chroot - then reboot.
+  readyFinalBoot  
 }
 
 
@@ -430,7 +422,11 @@ importSettings(){
 
 #retrieveSettings 'SETTINGNAME'
 retrieveSettings(){
-  SETTINGSPATH="$SCRIPTROOT/installsettings.cfg"
+  if [[ $DRYRUN -eq 1 ]]; then
+    SETTINGSPATH="./installsettings.cfg"
+  else
+    SETTINGSPATH="$SCRIPTROOT/installsettings.cfg"
+  fi 
 
   SETTINGNAME=$1
   SETTING=$(cat $SETTINGSPATH | grep $1 | cut -f2,2 -d'=')
@@ -461,7 +457,7 @@ partDisks(){
       "CREATE")
         echo "EFI: Boot partition will be created. Whole disk will be destroyed!"
         DEVICE=$(echo ${USERVARIABLES[BOOTPART]} | sed 's/[0-9]//g')
-        runCommand parted -s $DEVICE -- mklabel gpt mkpart primary fat32 0% 256MiB
+        runCommand parted -s $DEVICE -- mklabel gpt mkpart primary fat32 0% 256MiB name "ARCH_BOOT"
         ;;
     esac
   fi
@@ -475,10 +471,10 @@ partDisks(){
         if [[ $BOOTTYPE = "EFI" ]]; then
           #If the root device matches the boot device, don't setup device label
           if [ $BOOTDEVICE = $ROOTDEVICE ]; then
-            runCommand parted -s $DEVICE -- mkpart primary ext4 256MiB 100%
+            runCommand parted -s $DEVICE -- mkpart primary ext4 256MiB 100% name "ARCH_BOOT"
           else
             echo "EFI: Root partition will be created. Whole disk will be destroyed!"
-            runCommand parted -s $DEVICE -- mklabel gpt mkpart primary ext4 0% 100%
+            runCommand parted -s $DEVICE -- mklabel gpt mkpart primary ext4 0% 100% name "ARCH_ROOT"
           fi
         else
           #BIOS system. If boot device matches root device, then make root part the same as boot part
@@ -486,7 +482,7 @@ partDisks(){
             USERVARIABLES[ROOTPART]="${USERVARIABLES[BOOTPART]}"
           fi
           echo "BIOS: Root partition will be created. Whole disk will be destroyed!"
-          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on
+          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on name "ARCH_ROOT"
         fi
         ;;
     esac
@@ -533,18 +529,20 @@ mountParts(){
     runCommand btrfs subvolume create @srv
     runCommand btrfs subvolume create @pkg
     runCommand btrfs subvolume create @tmp
+    runCommand btrfs subvolume create @snapshots
     runCommand cd ~
     runCommand umount /mnt
     runCommand mount -o compress=zstd,subvol=@ /dev/mapper/luks /mnt
 
     runCommand cd /mnt
-    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp}
+    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp,.snapshots}
 
     runCommand mount -o compress=zstd,subvol=@home /dev/mapper/luks home
     runCommand mount -o compress=zstd,subvol=@log /dev/mapper/luks var/log
     runCommand mount -o compress=zstd,subvol=@pkg /dev/mapper/luks var/cache/pacman/pkg
     runCommand mount -o compress=zstd,subvol=@srv /dev/mapper/luks srv
     runCommand mount -o compress=zstd,subvol=@tmp /dev/mapper/luks tmp
+    runCommand mount -o compress=zstd,subvol=@snapshots /dev/mapper/luks .snapshots
 
     runCommand mkdir /mnt/boot
     runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
@@ -555,17 +553,17 @@ mountParts(){
 
 
 setLocalMirrors(){
-if [[ $DRYRUN -eq 1 ]]; then
-  echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
-else
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
+  else
 
-LOCALJSON=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
-LOCALARRAY=($(echo $LOCALJSON | grep -Po '"alpha2":.*?[^\\]"' | tr ':' $'\n'))
-COUNTRYCODE=$(echo ${LOCALARRAY[1]} | sed 's/"//g')
-echo $COUNTRYCODE
+  LOCALJSON=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
+  LOCALARRAY=($(echo $LOCALJSON | grep -Po '"alpha2":.*?[^\\]"' | tr ':' $'\n'))
+  COUNTRYCODE=$(echo ${LOCALARRAY[1]} | sed 's/"//g')
+  echo $COUNTRYCODE
 
-runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
-
+  runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
+  fi
 }
 
 ### Install the base packages
@@ -573,7 +571,7 @@ installArchLinuxBase(){
   setLocalMirrors
   #Arch Linux Base
 
-  archBasePackages=(base linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget snapper grub-btrfs snap-pac)
+  archBasePackages=(base ${USERVARIABLES[KERNEL]} linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
 
   aggregatePackagesString="${archBasePackages[@]}"
   runCommand pacstrap /mnt $aggregatePackagesString
@@ -673,7 +671,8 @@ readyForBoot(){
 }
 
 enableNetworkBoot(){
-  runCommand sudo systemctl enable dhcpcd@$NETINT.service
+  ##runCommand sudo systemctl enable dhcpcd@$NETINT.service
+  runCommand echo "network boot"
 }
 
 ####### add a user add to wheel group
@@ -717,7 +716,7 @@ makeYay(){
 
 ############ enable network manager/disable dhcpcd
 readyFinalBoot(){
-  runCommand sudo systemctl disable dhcpcd@$NETINT.service
+  ##runCommand sudo systemctl disable dhcpcd@$NETINT.service
   runCommand sudo systemctl disable sshd
   runCommand sudo systemctl enable NetworkManager
 
