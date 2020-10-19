@@ -32,7 +32,7 @@ USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
 USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
-USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
+USERVARIABLES[KERNEL]="linux" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
@@ -51,11 +51,11 @@ GPUTYPE=""
 INSTALLSTAGE=""
 
 if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
 fi
 
 if [ ! -f $SCRIPTROOT/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.sh
 fi
 
 #Available Software Bundles

@@ -12,7 +12,7 @@ There are a lot of Arch Linux install scripts out there, but if you think you'd 
 
 ### Script Overview
 
-Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, and use BTRFS for the file system. There will be various base packages installed (softwareBundles/archBasePackages), GRUB for the boot loader, plus modules needed for handling the encrypted Root partition. 
+Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, and use BTRFS for the file system. Snapshots will also be enabled. There will be various base packages installed, GRUB for the boot loader, plus modules needed for handling the encrypted Root partition and Snapshots from the GRUB menu.
 
 ### Usage - Full Build
 
@@ -22,7 +22,7 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 * Execute arch-build.sh, if you wish to log the entire install, execute with script -c ./arch-build.sh arch-build.log 
 
 ```sh
-curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/arch-build.sh
+curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/arch-build.sh
 chmod +x arch-build.sh
 ./arch-build.sh
 ```
