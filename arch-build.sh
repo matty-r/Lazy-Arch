@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 2.0
+# Version 2.2
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
@@ -32,6 +32,7 @@ USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
 USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
@@ -50,11 +51,11 @@ GPUTYPE=""
 INSTALLSTAGE=""
 
 if [ ! -f $SCRIPTROOT/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/bundleConfigurators.sh
 fi
 
 if [ ! -f $SCRIPTROOT/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/softwareBundles.sh
 fi
 
 #Available Software Bundles
@@ -103,6 +104,7 @@ generateSettings(){
   #Find the currently used interface - used to enable dhcpcd on that interface
   NETINT=$(ip link | grep "BROADCAST,MULTICAST,UP,LOWER_UP" | grep -oP '(?<=: ).*(?=: )')
   $(exportSettings "NETINT" $NETINT)
+  $(exportSettings "KERNEL" "${USERVARIABLES[KERNEL]}")
 
   #Determine if it's an EFI install or not
   if [ -d "$EFIPATH" ]
@@ -244,8 +246,10 @@ firstInstallStage(){
     arch-chroot /mnt su ${USERVARIABLES[USERNAME]} ./home/${USERVARIABLES[USERNAME]}/arch-build.sh
   fi
 
-  runCommand umount -R /mnt
-
+  echo "Done. Perform reboot when ready."
+  ##runCommand umount -R /mnt
+  
+  ##runCommand arch-chroot /mnt
   #runCommand reboot
 }
 
@@ -333,33 +337,31 @@ installSelectedBundles(){
 configInstalledBundles(){
   IN=${USERVARIABLES[BUNDLES]}
   arrIN=(${IN// / })
-
-    for bundle in "${arrIN[@]}"
-    do
-      if [[ ${availableBundles[$bundle]} ]]; then
-        bundleConfig="${availableBundles[$bundle]}-Config"
-        #Test function exists
-        declare -f $bundleConfig > /dev/null
-        #Run the function if it exists
-        if [[ $? -eq 0 ]]; then
-          echo "Configuring ${availableBundles[$bundle]}.."
-          runCommand $bundleConfig
-        else
-          echo "No additional config necessary for ${availableBundles[$bundle]}"
-        fi
+  
+  for bundle in "${arrIN[@]}"
+  do
+    if [[ ${availableBundles[$bundle]} ]]; then
+      bundleConfig="${availableBundles[$bundle]}-Config"
+      #Test function exists
+      declare -f $bundleConfig > /dev/null
+      #Run the function if it exists
+      if [[ $? -eq 0 ]]; then
+        echo "Configuring ${availableBundles[$bundle]}.."
+        runCommand $bundleConfig
+      else
+        echo "No additional config necessary for ${availableBundles[$bundle]}"
       fi
-    done
+    fi
+  done
+
+  runCommand btrfsPackages-Config
 }
 
 finalInstallStage(){
   importSettings
 
   echo "23. Readying final boot"
-  readyFinalBoot
-
-  echo "Script done. You're good to go after you reboot"
-  
-  #We now leave the final chroot - then reboot.
+  readyFinalBoot  
 }
 
 
@@ -420,7 +422,11 @@ importSettings(){
 
 #retrieveSettings 'SETTINGNAME'
 retrieveSettings(){
-  SETTINGSPATH="$SCRIPTROOT/installsettings.cfg"
+  if [[ $DRYRUN -eq 1 ]]; then
+    SETTINGSPATH="./installsettings.cfg"
+  else
+    SETTINGSPATH="$SCRIPTROOT/installsettings.cfg"
+  fi 
 
   SETTINGNAME=$1
   SETTING=$(cat $SETTINGSPATH | grep $1 | cut -f2,2 -d'=')
@@ -451,7 +457,7 @@ partDisks(){
       "CREATE")
         echo "EFI: Boot partition will be created. Whole disk will be destroyed!"
         DEVICE=$(echo ${USERVARIABLES[BOOTPART]} | sed 's/[0-9]//g')
-        runCommand parted -s $DEVICE -- mklabel gpt mkpart primary fat32 0% 256MiB
+        runCommand parted -s $DEVICE -- mklabel gpt mkpart primary fat32 0% 256MiB name "ARCH_BOOT"
         ;;
     esac
   fi
@@ -465,10 +471,10 @@ partDisks(){
         if [[ $BOOTTYPE = "EFI" ]]; then
           #If the root device matches the boot device, don't setup device label
           if [ $BOOTDEVICE = $ROOTDEVICE ]; then
-            runCommand parted -s $DEVICE -- mkpart primary ext4 256MiB 100%
+            runCommand parted -s $DEVICE -- mkpart primary ext4 256MiB 100% name "ARCH_BOOT"
           else
             echo "EFI: Root partition will be created. Whole disk will be destroyed!"
-            runCommand parted -s $DEVICE -- mklabel gpt mkpart primary ext4 0% 100%
+            runCommand parted -s $DEVICE -- mklabel gpt mkpart primary ext4 0% 100% name "ARCH_ROOT"
           fi
         else
           #BIOS system. If boot device matches root device, then make root part the same as boot part
@@ -476,7 +482,7 @@ partDisks(){
             USERVARIABLES[ROOTPART]="${USERVARIABLES[BOOTPART]}"
           fi
           echo "BIOS: Root partition will be created. Whole disk will be destroyed!"
-          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on
+          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on name "ARCH_ROOT"
         fi
         ;;
     esac
@@ -523,18 +529,20 @@ mountParts(){
     runCommand btrfs subvolume create @srv
     runCommand btrfs subvolume create @pkg
     runCommand btrfs subvolume create @tmp
+    runCommand btrfs subvolume create @snapshots
     runCommand cd ~
     runCommand umount /mnt
     runCommand mount -o compress=zstd,subvol=@ /dev/mapper/luks /mnt
 
     runCommand cd /mnt
-    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp}
+    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp,.snapshots}
 
     runCommand mount -o compress=zstd,subvol=@home /dev/mapper/luks home
     runCommand mount -o compress=zstd,subvol=@log /dev/mapper/luks var/log
     runCommand mount -o compress=zstd,subvol=@pkg /dev/mapper/luks var/cache/pacman/pkg
     runCommand mount -o compress=zstd,subvol=@srv /dev/mapper/luks srv
     runCommand mount -o compress=zstd,subvol=@tmp /dev/mapper/luks tmp
+    runCommand mount -o compress=zstd,subvol=@snapshots /dev/mapper/luks .snapshots
 
     runCommand mkdir /mnt/boot
     runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
@@ -544,47 +552,28 @@ mountParts(){
 }
 
 
-setAussieMirrors(){
-if [[ $DRYRUN -eq 1 ]]; then
-  echo "Write Aussie Mirrors to /etc/pacman.d/mirrorlist"
-else
+setLocalMirrors(){
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
+  else
 
-cat <<EOF > /etc/pacman.d/mirrorlist
-##
-## Arch Linux repository mirrorlist
-## Generated on 2019-10-14
-##
+  LOCALJSON=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
+  LOCALARRAY=($(echo $LOCALJSON | grep -Po '"alpha2":.*?[^\\]"' | tr ':' $'\n'))
+  COUNTRYCODE=$(echo ${LOCALARRAY[1]} | sed 's/"//g')
+  echo $COUNTRYCODE
 
-## Australia
-Server = https://mirror.aarnet.edu.au/pub/archlinux/\$repo/os/\$arch
-Server = http://archlinux.mirror.digitalpacific.com.au/\$repo/os/\$arch
-Server = http://ftp.iinet.net.au/pub/archlinux/\$repo/os/\$arch
-Server = http://mirror.internode.on.net/pub/archlinux/\$repo/os/\$arch
-Server = http://archlinux.melbourneitmirror.net/\$repo/os/\$arch
-Server = http://syd.mirror.rackspace.com/archlinux/\$repo/os/\$arch
-Server = https://syd.mirror.rackspace.com/archlinux/\$repo/os/\$arch
-Server = http://ftp.swin.edu.au/archlinux/\$repo/os/\$arch
-EOF
-fi
+  runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
+  fi
 }
 
 ### Install the base packages
 installArchLinuxBase(){
-  setAussieMirrors
+  setLocalMirrors
+  #Arch Linux Base
 
-  bundle="base"
-  if [[ ${availableBundles[$bundle]} ]]; then
-  arrayBundle=${availableBundles[$bundle]}[@]
-    for package in "${!arrayBundle}"
-    do
-        aggregatePackagesArr+=("$package")
-    done
-  else
-    echo "Chosen bundle $bundle is invalid. Skipping!"
-  fi
+  archBasePackages=(base ${USERVARIABLES[KERNEL]} linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget)
 
-  aggregatePackagesString="${aggregatePackagesArr[@]}"
-
+  aggregatePackagesString="${archBasePackages[@]}"
   runCommand pacstrap /mnt $aggregatePackagesString
 }
 
@@ -658,7 +647,7 @@ addHosts(){
 ### GENERATE INITRAMFS
 genInit(){
   sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
-  runCommand mkinitcpio -p linux
+  runCommand mkinitcpio -P
 }
 
 ### ROOT PASSWORD
@@ -682,7 +671,8 @@ readyForBoot(){
 }
 
 enableNetworkBoot(){
-  runCommand sudo systemctl enable dhcpcd@$NETINT.service
+  ##runCommand sudo systemctl enable dhcpcd@$NETINT.service
+  runCommand echo "network boot"
 }
 
 ####### add a user add to wheel group
@@ -726,7 +716,7 @@ makeYay(){
 
 ############ enable network manager/disable dhcpcd
 readyFinalBoot(){
-  runCommand sudo systemctl disable dhcpcd@$NETINT.service
+  ##runCommand sudo systemctl disable dhcpcd@$NETINT.service
   runCommand sudo systemctl disable sshd
   runCommand sudo systemctl enable NetworkManager
 

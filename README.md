@@ -22,7 +22,7 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 * Execute arch-build.sh, if you wish to log the entire install, execute with script -c ./arch-build.sh arch-build.log 
 
 ```sh
-curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/arch-build.sh
+curl -LO https://raw.githubusercontent.com/matty-r/arch-build/linux-zen/arch-build.sh
 chmod +x arch-build.sh
 ./arch-build.sh
 ```

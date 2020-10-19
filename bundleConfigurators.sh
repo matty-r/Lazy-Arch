@@ -16,6 +16,19 @@ do
   shift
 done
 
+btrfsPackages-Config(){
+  yay -S --noconfirm snapper grub-btrfs snap-pac snapper-gui
+  
+  ##Add the snapper config manually
+  sudo cp /etc/snapper/config-templates/default /etc/snapper/configs/root
+  sudo sed -i 's/SNAPPER_CONFIGS=""/SNAPPER_CONFIGS="root"/' /etc/conf.d/snapper
+  
+  ##enable grub snapshots
+  sudo systemctl enable grub-btrfs.path
+  sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
+  sudo grub-mkconfig -o /boot/grub/grub.cfg
+  sudo systemctl enable snapper-boot.timer
+}
 
 vboxGuestPackages-Config(){
   sudo systemctl enable vboxservice.service
@@ -31,7 +44,7 @@ qemuGuestPackages-Config(){
   makepkg -sri --noconfirm
   cd ~
 
-  sudo mkinitcpio -p linux
+  sudo mkinitcpio -P
   sudo systemctl enable qemu-ga.service
 }
 
@@ -94,8 +107,9 @@ themePackages-Config(){
   unzip v40.zip
   cd ~/plasma-applet-tiledmenu-40/
   kpackagetool5 -t Plasma/Applet -i package
-  sed -i 's|^plugin=org.kde.plasma.taskmanager.*|plugin=com.github.zren.tiledmenu|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
-  sed -i 's|^org.kde.plasma.taskmanager.*|plugin=org.kde.plasma.icontasks|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
+  
+  ## WIP - Change application menu to tiled menu
+  #sed -i 's|^plugin=org.kde.plasma.taskmanager.*|plugin=com.github.zren.tiledmenu|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
 
   ##temporary fix for the dark theme colours being incorrect
   sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
