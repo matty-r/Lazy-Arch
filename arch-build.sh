@@ -457,7 +457,7 @@ partDisks(){
       "CREATE")
         echo "EFI: Boot partition will be created. Whole disk will be destroyed!"
         DEVICE=$(echo ${USERVARIABLES[BOOTPART]} | sed 's/[0-9]//g')
-        runCommand parted -s $DEVICE -- mklabel gpt mkpart primary fat32 0% 256MiB name "ARCH_BOOT"
+        runCommand parted -s $DEVICE -- mklabel gpt mkpart "ARCH_BOOT" fat32 0% 256MiB
         ;;
     esac
   fi
@@ -471,10 +471,10 @@ partDisks(){
         if [[ $BOOTTYPE = "EFI" ]]; then
           #If the root device matches the boot device, don't setup device label
           if [ $BOOTDEVICE = $ROOTDEVICE ]; then
-            runCommand parted -s $DEVICE -- mkpart primary ext4 256MiB 100% name "ARCH_BOOT"
+            runCommand parted -s $DEVICE -- mkpart "ARCH_ROOT" ext4 256MiB 100%
           else
             echo "EFI: Root partition will be created. Whole disk will be destroyed!"
-            runCommand parted -s $DEVICE -- mklabel gpt mkpart primary ext4 0% 100% name "ARCH_ROOT"
+            runCommand parted -s $DEVICE -- mklabel gpt mkpart "ARCH_ROOT" ext4 0% 100%
           fi
         else
           #BIOS system. If boot device matches root device, then make root part the same as boot part
@@ -482,7 +482,7 @@ partDisks(){
             USERVARIABLES[ROOTPART]="${USERVARIABLES[BOOTPART]}"
           fi
           echo "BIOS: Root partition will be created. Whole disk will be destroyed!"
-          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on name "ARCH_ROOT"
+          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on
         fi
         ;;
     esac

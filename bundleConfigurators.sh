@@ -109,7 +109,7 @@ themePackages-Config(){
   kpackagetool5 -t Plasma/Applet -i package
   
   ## WIP - Change application menu to tiled menu
-  #sed -i 's|^plugin=org.kde.plasma.taskmanager.*|plugin=com.github.zren.tiledmenu|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
+  sed -i 's|plugin=org.kde.plasma.kickoff|plugin=com.github.zren.tiledmenu|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
 
   ##temporary fix for the dark theme colours being incorrect
   sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
@@ -119,6 +119,8 @@ themePackages-Config(){
   kwriteconfig5 --file ~/.config/kdeglobals --group General --key Name Breeze
   kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Numix-Circle
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key widgetStyle Breeze
+  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key ColorScheme Breeze
+  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick Qogir
 
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme Qogir
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key Name Qogir
@@ -176,7 +178,16 @@ themePackages-Config(){
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-menu-images 1
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-button-images 1
 
+  ## Dolphin / Configure Dolphin
+  kwriteconfig5 --file ~/.config/dolphinrc --group CompactMode --key FontWeight 50
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key ExpandableFolders false
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key FontWeight 50
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key PreviewSize 16
+  kwriteconfig5 --file ~/.config/dolphinrc --group General --key ShowSelectionToggle false
+  kwriteconfig5 --file ~/.config/dolphinrc --group IconsMode --key FontWeight 50
+  kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
   
+
 }
 
 #TODO
@@ -194,13 +205,14 @@ rdpPackages-Config(){
     "gnome" ) SESHNAME="gnome-session"
       ;;
   esac
-  cp /etc/X11/xinit/xinitrc /home/${USERVARIABLES[USERNAME]}/.xinitrc
-  sudo sed -i "s/twm &/#twm &/"
-  sudo sed -i "s/xclock -geometry 50x50-1+1 &/#xclock -geometry 50x50-1+1 &/"
-  sudo sed -i "s/xterm -geometry 80x50+494+51 &/#xterm -geometry 80x50+494+51 &/"
-  sudo sed -i "s/exec xterm -geometry 80x66+0+0 -name login/#exec xterm -geometry 80x66+0+0 -name login/"
+  cp /etc/X11/xinit/xinitrc ~/.xinitrc
+  sed -i "s/twm &/#twm &/" ~/.xinitrc
+  sed -i "s/xclock -geometry 50x50-1+1 &/#xclock -geometry 50x50-1+1 &/" ~/.xinitrc
+  sed -i "s/xterm -geometry 80x50+494+51 &/#xterm -geometry 80x50+494+51 &/" ~/.xinitrc
+  sed -i "s/xterm -geometry 80x20+494-0 &/#xterm -geometry 80x20+494-0 &" ~/.xinitrc
+  sed -i "s/exec xterm -geometry 80x66+0+0 -name login/#exec xterm -geometry 80x66+0+0 -name login/" ~/.xinitrc
 
-  echo "exec dbus-run-session -- $SESHNAME" > /home/${USERVARIABLES[USERNAME]}/.xinitrc
+  echo "exec dbus-run-session -- $SESHNAME" >> ~/.xinitrc
   sudo sed -i "s/use_vsock=true/use_vsock=false/" /etc/xrdp/xrdp.ini
 }
 
