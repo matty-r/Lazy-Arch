@@ -119,7 +119,7 @@ themePackages-Config(){
   kwriteconfig5 --file ~/.config/kdeglobals --group General --key Name Breeze
   kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Numix-Circle
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key widgetStyle Breeze
-  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key ColorScheme Breeze
+
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick Qogir
 
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme Qogir
