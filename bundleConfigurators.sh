@@ -95,6 +95,16 @@ mediaPackages-Config(){
 }
 
 themePackages-Config(){
+  if [[ ${USERVARIABLES[ROOTPART]} == "" ]]; then
+    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+  fi
+
+  if [[ ${ROOTUUID} == "" ]]; then
+    ROOTUUID=$(retrieveSettings 'ROOTUUID')
+  fi
+
+  
+
   ##Apply grub theming fixes
   ROOTUUID=$(sudo blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
   sudo sed -i 's|^#GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/arch-silence/theme.txt"|' /etc/default/grub
@@ -109,7 +119,24 @@ themePackages-Config(){
   kpackagetool5 -t Plasma/Applet -i package
   
   ## WIP - Change application menu to tiled menu
-  sed -i 's|plugin=org.kde.plasma.kickoff|plugin=com.github.zren.tiledmenu|' ~/.config/plasma-org.kde.plasma.desktop-appletsrc
+  sudo sed -i 's|org.kde.plasma.kickoff|com.github.zren.tiledmenu|' /usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js
+
+echo 'kickoff.currentConfigGroup = ["Configuration","General"] 
+kickoff.writeConfig("appDescription", "hidden")
+kickoff.writeConfig("appListWidth", "248")
+kickoff.writeConfig("defaultTileColor", "#00000000")
+kickoff.writeConfig("menuItemHeight", "28")
+kickoff.writeConfig("popupHeight", "633")
+kickoff.writeConfig("searchFieldFollowsTheme", "true")
+kickoff.writeConfig("searchFieldHeight", "36")
+kickoff.writeConfig("sidebarButtonSize", "36")
+kickoff.writeConfig("sidebarIconSize", "28")
+kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js
+
+  kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 formfactor 2
+  kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 immutability 1
+  kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 location 4
+  kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 plugin org.kde.panel
 
   ##temporary fix for the dark theme colours being incorrect
   sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
@@ -120,7 +147,7 @@ themePackages-Config(){
   kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Numix-Circle
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key widgetStyle Breeze
 
-  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick Qogir
+  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
 
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme Qogir
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key Name Qogir
@@ -186,13 +213,15 @@ themePackages-Config(){
   kwriteconfig5 --file ~/.config/dolphinrc --group General --key ShowSelectionToggle false
   kwriteconfig5 --file ~/.config/dolphinrc --group IconsMode --key FontWeight 50
   kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
-  
-
 }
 
 #TODO
 rdpPackages-Config(){
   SESHNAME=""
+
+  if [[ ${USERVARIABLES[DESKTOP]} == "" ]]; then
+    USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
+  fi
 
   sudo systemctl enable xrdp xrdp-sesman
 
@@ -205,15 +234,35 @@ rdpPackages-Config(){
     "gnome" ) SESHNAME="gnome-session"
       ;;
   esac
+
   cp /etc/X11/xinit/xinitrc ~/.xinitrc
   sed -i "s/twm &/#twm &/" ~/.xinitrc
   sed -i "s/xclock -geometry 50x50-1+1 &/#xclock -geometry 50x50-1+1 &/" ~/.xinitrc
   sed -i "s/xterm -geometry 80x50+494+51 &/#xterm -geometry 80x50+494+51 &/" ~/.xinitrc
-  sed -i "s/xterm -geometry 80x20+494-0 &/#xterm -geometry 80x20+494-0 &" ~/.xinitrc
+  sed -i "s/xterm -geometry 80x20+494-0 &/#xterm -geometry 80x20+494-0 &/" ~/.xinitrc
   sed -i "s/exec xterm -geometry 80x66+0+0 -name login/#exec xterm -geometry 80x66+0+0 -name login/" ~/.xinitrc
 
   echo "exec dbus-run-session -- $SESHNAME" >> ~/.xinitrc
   sudo sed -i "s/use_vsock=true/use_vsock=false/" /etc/xrdp/xrdp.ini
+}
+
+#retrieveSettings 'SETTINGNAME'
+retrieveSettings(){
+  # Script Variables. DO NOT CHANGE THESE
+  BUNDLECONFIGPATH=$( readlink -m $( type -p $0 ))
+  BUNDLECONFIGROOT=${BUNDLECONFIGPATH%/*}
+
+  SETTINGSPATH="$BUNDLECONFIGROOT/installsettings.cfg"
+
+  if [ ! -f $SETTINGSPATH ]; then
+    echo 'Unable to import required settings. Exiting.'
+    exit 1
+  fi
+
+  SETTINGNAME=$1
+  SETTING=$(cat $SETTINGSPATH | grep $1 | cut -f2,2 -d'=')
+
+  echo $SETTING
 }
 
 if [[ $RUNCONFIG ]]; then

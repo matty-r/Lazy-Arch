@@ -83,7 +83,7 @@ printSettings(){
 #Export out the settings used/selected to installsettings.cfg
 generateSettings(){
   # create settings file
-    echo "" > "$SCRIPTROOT/installsettings.cfg"
+  echo "" > "$SCRIPTROOT/installsettings.cfg"
 
   $(exportSettings "USERNAME" "${USERVARIABLES[USERNAME]}")
   $(exportSettings "HOSTNAME" "${USERVARIABLES[HOSTNAME]}")
@@ -94,10 +94,12 @@ generateSettings(){
   $(exportSettings "ROOTMODE" "${USERVARIABLES[ROOTMODE]}")
 
   #Grab the device chosen for the boot part
-  BOOTDEVICE=$(echo "${USERVARIABLES[BOOTPART]}" | cut -f3,3 -d'/' | sed 's/[0-9]//g')
+  BOOTDEVICEARRAY=($(parted ${USERVARIABLES[BOOTPART]} -- print devices))
+  BOOTDEVICE=$(echo ${BOOTDEVICEARRAY[2]})
   $(exportSettings "BOOTDEVICE" $BOOTDEVICE)
   #Grab the device chosen for the root part
-  ROOTDEVICE=$(echo "${USERVARIABLES[ROOTPART]}" | cut -f3,3 -d'/' | sed 's/[0-9]//g')
+  ROOTDEVICEARRAY=($(parted ${USERVARIABLES[ROOTPART]} -- print devices))
+  ROOTDEVICE=$(echo ${ROOTDEVICEARRAY[2]})
   $(exportSettings "ROOTDEVICE" $ROOTDEVICE)
   $(exportSettings "SCRIPTPATH" "$SCRIPTPATH")
   $(exportSettings "SCRIPTROOT" "$SCRIPTROOT")
@@ -456,8 +458,7 @@ partDisks(){
         ;;
       "CREATE")
         echo "EFI: Boot partition will be created. Whole disk will be destroyed!"
-        DEVICE=$(echo ${USERVARIABLES[BOOTPART]} | sed 's/[0-9]//g')
-        runCommand parted -s $DEVICE -- mklabel gpt mkpart "ARCH_BOOT" fat32 0% 256MiB
+        runCommand parted -s $BOOTDEVICE -- mklabel gpt mkpart "ARCH_BOOT" fat32 0% 256MiB
         ;;
     esac
   fi
@@ -467,14 +468,13 @@ partDisks(){
         echo "Leaving the root partition..."
         ;;
       "CREATE")
-        DEVICE=$(echo ${USERVARIABLES[ROOTPART]} | sed 's/[0-9]//g')
         if [[ $BOOTTYPE = "EFI" ]]; then
           #If the root device matches the boot device, don't setup device label
           if [ $BOOTDEVICE = $ROOTDEVICE ]; then
-            runCommand parted -s $DEVICE -- mkpart "ARCH_ROOT" ext4 256MiB 100%
+            runCommand parted -s $ROOTDEVICE -- mkpart "ARCH_ROOT" ext4 256MiB 100%
           else
             echo "EFI: Root partition will be created. Whole disk will be destroyed!"
-            runCommand parted -s $DEVICE -- mklabel gpt mkpart "ARCH_ROOT" ext4 0% 100%
+            runCommand parted -s $ROOTDEVICE -- mklabel gpt mkpart "ARCH_ROOT" ext4 0% 100%
           fi
         else
           #BIOS system. If boot device matches root device, then make root part the same as boot part
@@ -482,7 +482,7 @@ partDisks(){
             USERVARIABLES[ROOTPART]="${USERVARIABLES[BOOTPART]}"
           fi
           echo "BIOS: Root partition will be created. Whole disk will be destroyed!"
-          runCommand parted -s $DEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on
+          runCommand parted -s $ROOTDEVICE -- mklabel msdos mkpart primary ext4 0% 100% set 1 boot on
         fi
         ;;
     esac
@@ -497,14 +497,12 @@ formatParts(){
     fi
 
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
-      ##Adjust for encryption
       echo "Set up encryption for ${USERVARIABLES[ROOTPART]}"
       runCommand cryptsetup -q -y -v --cipher=aes-xts-plain64 --key-size 512 --hash=sha512 luksFormat ${USERVARIABLES[ROOTPART]}
       runCommand cryptsetup luksOpen ${USERVARIABLES[ROOTPART]} luks
 
       echo "Make btrfs on /dev/mapper/luks"
-      runCommand mkfs.btrfs -L archRoot -f -f /dev/mapper/luks
-      #runCommand mkfs.btrfs -L archRoot -f -f ${USERVARIABLES[ROOTPART]}
+      runCommand mkfs.btrfs -L ARCH_LUKS -f -f /dev/mapper/luks
     fi
   else
     if [ ${USERVARIABLES[ROOTMODE]} = "CREATE" ] || [ ${USERVARIABLES[ROOTMODE]} = "FORMAT" ]; then
@@ -516,34 +514,34 @@ formatParts(){
 
 ## Mount the file systems
 mountParts(){
+  #mount encrypted partition instead
+  echo "Mount new luks partition..."
+  runCommand mount -o compress=zstd /dev/mapper/luks /mnt
+
+  #btrfs sub volumes
+  runCommand cd /mnt
+  runCommand btrfs subvolume create @
+  runCommand btrfs subvolume create @home
+  runCommand btrfs subvolume create @log
+  runCommand btrfs subvolume create @srv
+  runCommand btrfs subvolume create @pkg
+  runCommand btrfs subvolume create @tmp
+  runCommand btrfs subvolume create @snapshots
+  runCommand cd ~
+  runCommand umount /mnt
+  runCommand mount -o compress=zstd,subvol=@ /dev/mapper/luks /mnt
+
+  runCommand cd /mnt
+  runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp,.snapshots}
+
+  runCommand mount -o compress=zstd,subvol=@home /dev/mapper/luks home
+  runCommand mount -o compress=zstd,subvol=@log /dev/mapper/luks var/log
+  runCommand mount -o compress=zstd,subvol=@pkg /dev/mapper/luks var/cache/pacman/pkg
+  runCommand mount -o compress=zstd,subvol=@srv /dev/mapper/luks srv
+  runCommand mount -o compress=zstd,subvol=@tmp /dev/mapper/luks tmp
+  runCommand mount -o compress=zstd,subvol=@snapshots /dev/mapper/luks .snapshots
+
   if [[ $BOOTTYPE = "EFI" ]]; then
-    #mount encrypted partition instead
-    echo "Mount new luks partition..."
-    runCommand mount -o compress=zstd /dev/mapper/luks /mnt
-
-    #btrfs sub volumes
-    runCommand cd /mnt
-    runCommand btrfs subvolume create @
-    runCommand btrfs subvolume create @home
-    runCommand btrfs subvolume create @log
-    runCommand btrfs subvolume create @srv
-    runCommand btrfs subvolume create @pkg
-    runCommand btrfs subvolume create @tmp
-    runCommand btrfs subvolume create @snapshots
-    runCommand cd ~
-    runCommand umount /mnt
-    runCommand mount -o compress=zstd,subvol=@ /dev/mapper/luks /mnt
-
-    runCommand cd /mnt
-    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp,.snapshots}
-
-    runCommand mount -o compress=zstd,subvol=@home /dev/mapper/luks home
-    runCommand mount -o compress=zstd,subvol=@log /dev/mapper/luks var/log
-    runCommand mount -o compress=zstd,subvol=@pkg /dev/mapper/luks var/cache/pacman/pkg
-    runCommand mount -o compress=zstd,subvol=@srv /dev/mapper/luks srv
-    runCommand mount -o compress=zstd,subvol=@tmp /dev/mapper/luks tmp
-    runCommand mount -o compress=zstd,subvol=@snapshots /dev/mapper/luks .snapshots
-
     runCommand mkdir /mnt/boot
     runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
   else
@@ -557,11 +555,10 @@ setLocalMirrors(){
     echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
   else
 
-  LOCALJSON=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
-  LOCALARRAY=($(echo $LOCALJSON | grep -Po '"alpha2":.*?[^\\]"' | tr ':' $'\n'))
-  COUNTRYCODE=$(echo ${LOCALARRAY[1]} | sed 's/"//g')
-  echo $COUNTRYCODE
-
+  GEOLOCATE=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
+  COUNTRYCODE=$(echo $GEOLOCATE | grep -Po '(?<="alpha2":").*?(?=")')
+  echo "MIRRORS will be retrieved from $COUNTRYCODE"
+  
   runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
   fi
 }
@@ -608,19 +605,29 @@ chrootTime(){
 
 ### Set the time zone
 setTime(){
-  runCommand ln -sf /usr/share/zoneinfo/Australia/Brisbane /etc/localtime
+  GEOLOCATE=$(curl -s --location --request GET "https://ep.api.getfastah.com/whereis/v1/json/$(curl -s icanhazip.com)" --header 'Fastah-Key:  0f7b832d16404eb8a8386b4675347e83')
+  TIMEZONE=$(echo $GEOLOCATE | grep -Po '(?<="tz":").*?(?=")')
+  echo "TIMEZONE will be set to $TIMEZONE"
+
+  runCommand ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
   runCommand hwclock --systohc
 }
 
 ### Uncomment en_US.UTF-8 UTF-8 and other needed locales in /etc/locale.gen
 genLocales(){
+  GEOLOCATE=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
+  COUNTRYCODE=$(echo $GEOLOCATE | grep -Po '(?<="alpha2":").*?(?=")')
+  LANGUAGE=$(echo $GEOLOCATE | grep -Po '(?<="languages_official":\[").*?(?=")')
+  LANGCODE="$LANGUAGE"_"$COUNTRYCODE.UTF-8"
+  echo "LANGUAGE CODE will be set to $LANGCODE"
+
   runCommand sed -i "s/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
-  runCommand sed -i "s/#en_AU.UTF-8 UTF-8/en_AU.UTF-8 UTF-8/" /etc/locale.gen
+  runCommand sed -i "s/#$LANGCODE UTF-8/$LANGCODE UTF-8/" /etc/locale.gen
   runCommand locale-gen
   if [[ $DRYRUN -eq 1 ]]; then
-    echo "LANG=en_AU.UTF-8 to /etc/locale.conf"
+    echo "$LANGCODE to /etc/locale.conf"
   else
-    runCommand echo "LANG=en_AU.UTF-8" >> /etc/locale.conf
+    runCommand echo "LANG=$LANGCODE" >> /etc/locale.conf
   fi
 }
 
