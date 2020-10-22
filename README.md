@@ -1,5 +1,5 @@
-## *WARNING !*
-This script was intended for personal use only. Use at your own risk - and may result in a loss of data.
+## *WARNING!*
+WORK IN PROGRESS - This script was intended for personal use only. Use at your own risk - and may result in a loss of data. 
 
 ### Purpose
 
@@ -50,11 +50,13 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
     ```
     
 3. Set arch-build.sh to executable
-4. Execute arch-build.sh, if you wish to log the entire install, execute with script -c ./arch-build.sh arch-build.log 
+4. In the first instance, execute with ./arch-build.sh -d (This will display all of the commands the script intends to run, without making any system changes)
+5. If you're happy, Execute ./arch-build.sh. If you wish to log the entire install, execute with script -c ./arch-build.sh arch-build.log 
 
 ```sh
 curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
 chmod +x arch-build.sh
+./arch-build.sh -d
 ./arch-build.sh
 ```
 
@@ -73,5 +75,5 @@ chmod +x arch-build.sh
 
 ### Usage - Software Bundles
 
-* ./softwareBundles.sh {bundle name} to run the associated bundle installer. Will ask if you want to run the associated configurator if available
+* ./softwareBundles.sh {bundle name} to run the associated bundle installer. Will ask if you want to run the associated configurator if available.
 
