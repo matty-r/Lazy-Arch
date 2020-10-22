@@ -80,6 +80,19 @@ printSettings(){
   done
 }
 
+getDevice(){
+  USERPARTITION=$1
+  DEVICES=($(lsblk -no PATH))
+  for DEVICE in ${DEVICES[@]}
+  do
+      if [ ${#DEVICE} -lt ${#USERPARTITION} ]; then
+          if [[ "$USERPARTITION" =~ "$DEVICE" ]]; then
+              echo "$DEVICE"
+          fi
+      fi
+  done
+}
+
 #Export out the settings used/selected to installsettings.cfg
 generateSettings(){
   # create settings file
@@ -94,12 +107,10 @@ generateSettings(){
   $(exportSettings "ROOTMODE" "${USERVARIABLES[ROOTMODE]}")
 
   #Grab the device chosen for the boot part
-  BOOTDEVICEARRAY=($(parted ${USERVARIABLES[BOOTPART]} -- print devices))
-  BOOTDEVICE=$(echo ${BOOTDEVICEARRAY[2]})
+  BOOTDEVICE=$(getDevice ${USERVARIABLES[BOOTPART]})
   $(exportSettings "BOOTDEVICE" $BOOTDEVICE)
   #Grab the device chosen for the root part
-  ROOTDEVICEARRAY=($(parted ${USERVARIABLES[ROOTPART]} -- print devices))
-  ROOTDEVICE=$(echo ${ROOTDEVICEARRAY[2]})
+  ROOTDEVICE=$(getDevice ${USERVARIABLES[ROOTPART]})
   $(exportSettings "ROOTDEVICE" $ROOTDEVICE)
   $(exportSettings "SCRIPTPATH" "$SCRIPTPATH")
   $(exportSettings "SCRIPTROOT" "$SCRIPTROOT")
@@ -551,13 +562,13 @@ mountParts(){
 
 
 setLocalMirrors(){
-  if [[ $DRYRUN -eq 1 ]]; then
-    echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
-  else
-
   GEOLOCATE=$(curl -sX GET https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com))
   COUNTRYCODE=$(echo $GEOLOCATE | grep -Po '(?<="alpha2":").*?(?=")')
   echo "MIRRORS will be retrieved from $COUNTRYCODE"
+
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
+  else
   
   runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
   fi
@@ -624,11 +635,7 @@ genLocales(){
   runCommand sed -i "s/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
   runCommand sed -i "s/#$LANGCODE UTF-8/$LANGCODE UTF-8/" /etc/locale.gen
   runCommand locale-gen
-  if [[ $DRYRUN -eq 1 ]]; then
-    echo "$LANGCODE to /etc/locale.conf"
-  else
-    runCommand echo "LANG=$LANGCODE" >> /etc/locale.conf
-  fi
+  runCommand echo "LANG=$LANGCODE" >> /etc/locale.conf
 }
 
 ### Create the hostname file:
