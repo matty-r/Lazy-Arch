@@ -40,7 +40,7 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
     #Just fill in within the "quotes"
     USERVARIABLES[USERNAME]="matty-r"
     USERVARIABLES[HOSTNAME]="matts-arch"
-    USERVARIABLES[BUNDLES]="theme gaming media admin"
+    USERVARIABLES[BUNDLES]="kdeTheme grubTheme gaming media admin office"
     USERVARIABLES[DESKTOP]="kde"
     USERVARIABLES[KERNEL]="linux-zen"
     USERVARIABLES[BOOTPART]="/dev/vda1"

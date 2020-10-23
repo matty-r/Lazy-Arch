@@ -37,8 +37,6 @@ btrfsPackages-Config(){
   sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
   sudo grub-mkconfig -o /boot/grub/grub.cfg
   sudo systemctl enable snapper-boot.timer
-
-
 }
 
 vboxGuestPackages-Config(){
