@@ -4,7 +4,7 @@ SOFTWAREBUNDLESROOT=${SOFTWAREBUNDLESPATH%/*}
 
 
 declare -a gamingPackages nvidiaPackages virtualPackages rdpPackages dailyPackages officePackages mediaPackages
-declare -a adminPackages devPackages themePackages kdePackages gnomePackages xfcePackages
+declare -a adminPackages devPackages kdePackages gnomePackages xfcePackages kdeThemePackages grubThemePackages
 declare -a vboxGuestPackages qemuGuestPackages hyperGuestPackages amdgpuPackages esxiGuestPackages
 declare -A availableBundles
 
@@ -29,7 +29,8 @@ availableBundles[nvidia]=nvidiaPackages
 availableBundles[amdgpu]=amdgpuPackages
 
 #Theming Bundles
-availableBundles[theme]=themePackages
+availableBundles[kdeTheme]=kdeThemePackages
+availableBundles[grubTheme]=grubThemePackages
 
 ##Desktop Environment Bundles
 availableBundles[kde]=kdePackages
@@ -51,19 +52,23 @@ done
 gamingPackages=(steam obs-studio discord lib32-fontconfig)
 virtualPackages=(libvirt qemu virt-manager ebtables dnsmasq ovmf)
 rdpPackages=(xrdp-git xorgxrdp-git xorg-xinit xterm xorg-xrdb)
-dailyPackages=(protonmail-bridge nextcloud-client)
-officePackages=(cups cups-pdf tesseract tesseract-data-eng pdftk-bin libreoffice-fresh okular masterpdfeditor-free gscan2pdf)
+dailyPackages=(protonmail-bridge-bin nextcloud-client)
+officePackages=(cups cups-pdf tesseract tesseract-data-eng pdftk libreoffice-fresh okular masterpdfeditor-free gscan2pdf)
 mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc) 
 adminPackages=(htop rsync filezilla putty networkmanager-openvpn remmina-git freerdp-git gnome-keyring wget fwupd)
 devPackages=(visual-studio-code-bin qtcreator)
 
+#Boot Packages
+## TODO
+#grubPackages=()
+
 #Wine Gaming Packages
 #https://github.com/lutris/lutris/wiki/Game:-Blizzard-App
-battleNetPackages=(lib32-gnutls lib32-libldap lib32-libgpg-error lib32-sqlite lib32-libpulse wine-staging giflib lib32-giflib libpng lib32-libpng libldap lib32-libldap gnutls lib32-gnutls mpg123 lib32-mpg123 openal lib32-openal v4l-utils lib32-v4l-utils libpulse lib32-libpulse libgpg-error lib32-libgpg-error alsa-plugins lib32-alsa-plugins alsa-lib lib32-alsa-lib libjpeg-turbo lib32-libjpeg-turbo sqlite lib32-sqlite libxcomposite lib32-libxcomposite libxinerama lib32-libgcrypt libgcrypt lib32-libxinerama ncurses lib32-ncurses opencl-icd-loader lib32-opencl-icd-loader libxslt lib32-libxslt libva lib32-libva gtk3 lib32-gtk3 gst-plugins-base-libs lib32-gst-plugins-base-libs )
+battleNetPackages=(lib32-gnutls lib32-libldap lib32-libgpg-error lib32-sqlite lib32-libpulse wine-staging giflib lib32-giflib libpng lib32-libpng libldap lib32-libldap gnutls lib32-gnutls mpg123 lib32-mpg123 openal lib32-openal v4l-utils lib32-v4l-utils libpulse lib32-libpulse libgpg-error lib32-libgpg-error alsa-plugins lib32-alsa-plugins alsa-lib lib32-alsa-lib libjpeg-turbo lib32-libjpeg-turbo sqlite lib32-sqlite libxcomposite lib32-libxcomposite libxinerama lib32-libgcrypt libgcrypt lib32-libxinerama ncurses lib32-ncurses opencl-icd-loader lib32-opencl-icd-loader libxslt lib32-libxslt libva lib32-libva gtk3 lib32-gtk3 gst-plugins-base-libs lib32-gst-plugins-base-libs)
 wineGamingPackages=(lutris vulkan-icd-loader lib32-vulkan-icd-loader)
 
 #Guest Type Packages
-vboxGuestPackages=(vbox-guest-utils)
+vboxGuestPackages=(virtualbox-guest-utils)
 qemuGuestPackages=(qemu-guest-agent spice-vdagent)
 hyperGuestPackages=(xf86-video-fbdev)
 esxiGuestPackages=(open-vm-tools xf86-input-vmmouse xf86-video-vmware mesa)
@@ -73,8 +78,9 @@ nvidiaPackages=(nvidia lib32-nvidia-utils nvidia-settings)
 amdgpuPackages=(mesa lib32-mesa xf86-video-amdgpu vulkan-radeon lib32-vulkan-radeon)
 
 ##Theming Packages
-##Old theming adapta-gtk-theme adapta-kde papirus-icon-theme ttf-roboto 
-themePackages=(numix-circle-icon-theme-git qogir-gtk-theme-git qogir-kde-theme-git arch-silence-grub-theme-git)
+kdeThemePackages=(numix-circle-icon-theme-git qogir-gtk-theme-git qogir-kde-theme-git)
+grubThemePackages=(arch-silence-grub-theme-git)
+
 
 ##Desktop Environment Packages
 kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager)

@@ -30,7 +30,7 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="theme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
+USERVARIABLES[BUNDLES]="kdeTheme grubTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[KERNEL]="linux" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
@@ -319,27 +319,38 @@ installSelectedBundles(){
   IN=${USERVARIABLES[BUNDLES]}
   arrIN=(${IN// / })
   declare -a aggregatePackagesArr
-  aggregatePackagesString=""
 
   for bundle in "${arrIN[@]}"
   do
       if [[ ${availableBundles[$bundle]} ]]; then
         arrayBundle=${availableBundles[$bundle]}[@]
+        aggregatePackagesArr=()
+        aggregatePackagesString=""
         for package in "${!arrayBundle}"
         do
             aggregatePackagesArr+=("$package")
         done
+        ##Install each bundle seperately
+        aggregatePackagesString="${aggregatePackagesArr[@]}"
+        runCommand yay -S --noconfirm $aggregatePackagesString
+        if [[ ! $DRYRUN -eq 1 ]]; then
+          for app in "${aggregatePackagesArr[@]}"
+          do
+            if [[ "error" =~ "$(pacman -Q $app)" ]]; then
+              echo "$app is not installed. Retrying."
+              runCommand yay -S --noconfirm $app
+            else
+              echo "$app verified. Continuing.."
+            fi
+          done
+        fi
       else
         echo "Chosen bundle $bundle is invalid. Skipping!"
       fi
   done
 
-  aggregatePackagesString="${aggregatePackagesArr[@]}"
-  runCommand yay -S --noconfirm $aggregatePackagesString
-
   configInstalledBundles
 
-  #Only used if the install craps out or something
   if [[ $DRYRUN -eq 1 ]]; then
     echo "Write Fourth to /home/${USERVARIABLES[USERNAME]}/stage.cfg"
   else
@@ -670,16 +681,14 @@ rootPassword(){
 }
 
 ### INSTALL BOOTLOADER AND MICROCODE
-readyForBoot(){
-  DEVICE=$(echo ${USERVARIABLES[ROOTPART]} | sed 's/[0-9]//g')
-  
+readyForBoot(){ 
   if [[ $BOOTTYPE = "EFI" ]]; then
     runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober efibootmgr
     runCommand grub-install --target=x86_64-efi --efi-directory=/boot  --bootloader-id=GRUB --recheck
     runCommand grub-mkconfig -o /boot/grub/grub.cfg
   else
     runCommand pacman -S --noconfirm grub $CPUTYPE'-ucode' os-prober
-    runCommand grub-install --target=i386-pc $DEVICE
+    runCommand grub-install --target=i386-pc $ROOTDEVICE
     runCommand grub-mkconfig -o /boot/grub/grub.cfg
   fi
 }

@@ -17,8 +17,17 @@ do
 done
 
 btrfsPackages-Config(){
+  if [[ ${USERVARIABLES[ROOTPART]} == "" ]]; then
+    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+  fi
+
   yay -S --noconfirm snapper grub-btrfs snap-pac snapper-gui
-  
+
+  ##Enable grub boot crypto
+  ROOTUUID=$(sudo blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
+  sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='${ROOTUUID}':root"|' /etc/default/grub
+  sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
+
   ##Add the snapper config manually
   sudo cp /etc/snapper/config-templates/default /etc/snapper/configs/root
   sudo sed -i 's/SNAPPER_CONFIGS=""/SNAPPER_CONFIGS="root"/' /etc/conf.d/snapper
@@ -28,6 +37,8 @@ btrfsPackages-Config(){
   sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
   sudo grub-mkconfig -o /boot/grub/grub.cfg
   sudo systemctl enable snapper-boot.timer
+
+
 }
 
 vboxGuestPackages-Config(){
@@ -49,6 +60,10 @@ qemuGuestPackages-Config(){
 }
 
 kdePackages-Config(){
+  if [[ ${USERVARIABLES[USERNAME]} == "" ]]; then
+    USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+  fi
+
   #enable SDDM and set autologin, also set theme to breeze
   sudo systemctl enable sddm
   sudo mkdir /etc/sddm.conf.d
@@ -56,7 +71,24 @@ kdePackages-Config(){
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key Session plasma
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User ${USERVARIABLES[USERNAME]}
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Theme --key Current breeze
+
+  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
+
+  kwriteconfig5 --file ~/.config/kwinrc --group Plugins --key magiclampEnabled true
+  kwriteconfig5 --file ~/.config/kwinrc --group Plugins --key kwin4_effect_squashEnabled false
+  kwriteconfig5 --file ~/.config/kwinrc --group Plugins --key blurEnabled true
+
+  ## Dolphin / Configure Dolphin
+  kwriteconfig5 --file ~/.config/dolphinrc --group CompactMode --key FontWeight 50
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key ExpandableFolders false
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key FontWeight 50
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key PreviewSize 16
+  kwriteconfig5 --file ~/.config/dolphinrc --group General --key ShowSelectionToggle false
+  kwriteconfig5 --file ~/.config/dolphinrc --group IconsMode --key FontWeight 50
+  kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
+
 }
+
 
 gnomePackages-Config(){
   sudo systemctl enable gdm
@@ -94,23 +126,13 @@ mediaPackages-Config(){
   sudo systemctl enable bluetooth
 }
 
-themePackages-Config(){
-  if [[ ${USERVARIABLES[ROOTPART]} == "" ]]; then
-    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
-  fi
-
-  if [[ ${ROOTUUID} == "" ]]; then
-    ROOTUUID=$(retrieveSettings 'ROOTUUID')
-  fi
-
-  
-
-  ##Apply grub theming fixes
-  ROOTUUID=$(sudo blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
+grubThemePackages-Config(){
+  ## Apply Grub Theme
   sudo sed -i 's|^#GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/arch-silence/theme.txt"|' /etc/default/grub
-  sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='${ROOTUUID}':root"|' /etc/default/grub
-  sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
   sudo grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+kdeThemePackages-Config(){
 
   ## Installed the tiled menu
   curl -L -O https://github.com/Zren/plasma-applet-tiledmenu/archive/v40.zip 
@@ -147,15 +169,11 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Numix-Circle
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key widgetStyle Breeze
 
-  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
 
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme Qogir
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key Name Qogir
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key widgetStyle Breeze
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group Icons --key Theme Numix-Circle
-
-  kwriteconfig5 --file ~/.config/kwinrc --group Plugins --key magiclampEnabled true
-  kwriteconfig5 --file ~/.config/kwinrc --group Plugins --key kwin4_effect_squashEnabled false
   
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key BorderActivate 9
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key DesktopLayout org.kde.breeze.desktop
@@ -205,14 +223,6 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-menu-images 1
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-button-images 1
 
-  ## Dolphin / Configure Dolphin
-  kwriteconfig5 --file ~/.config/dolphinrc --group CompactMode --key FontWeight 50
-  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key ExpandableFolders false
-  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key FontWeight 50
-  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key PreviewSize 16
-  kwriteconfig5 --file ~/.config/dolphinrc --group General --key ShowSelectionToggle false
-  kwriteconfig5 --file ~/.config/dolphinrc --group IconsMode --key FontWeight 50
-  kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
 }
 
 #TODO
