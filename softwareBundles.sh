@@ -56,7 +56,7 @@ rdpPackages=(xrdp-git xorgxrdp-git xorg-xinit xterm xorg-xrdb)
 dailyPackages=(protonmail-bridge-bin nextcloud-client)
 officePackages=(cups cups-pdf tesseract tesseract-data-eng pdftk libreoffice-fresh okular masterpdfeditor-free gscan2pdf otf-ibm-plex ttf-carlito ttf-caladea ttf-liberation)
 mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc) 
-adminPackages=(htop rsync filezilla networkmanager-openvpn remmina-git freerdp-git gnome-keyring)
+adminPackages=(rsync filezilla networkmanager-openvpn remmina-git freerdp-git gnome-keyring)
 devPackages=(visual-studio-code-bin qtcreator)
 
 #Boot Packages
@@ -70,7 +70,7 @@ battleNetPackages=(lib32-gnutls lib32-libldap lib32-libgpg-error lib32-sqlite li
 ## Add to /etc/environment "VK_ICD_FILENAMES=/" See Arch Wiki vulkan
 
 #Arch Linux Base
-archBasePackages=(base "${USERVARIABLES[KERNEL]}" "${USERVARIABLES[KERNEL]}"-headers linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget alsa-utils)
+archBasePackages=(base "${USERVARIABLES[KERNEL]}" "${USERVARIABLES[KERNEL]}"-headers linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget alsa-utils htop)
 
 #Guest Type Packages
 vboxGuestPackages=(virtualbox-guest-utils)
@@ -88,9 +88,9 @@ grubThemePackages=(arch-silence-grub-theme-git)
 
 
 ##Desktop Environment Packages
-kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager)
-gnomePackages=(gnome gnome-extra networkmanager)
-xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet)
+kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager firefox)
+gnomePackages=(gnome gnome-extra networkmanager firefox)
+xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet firefox)
 
 
 installSoftwareBundles(){

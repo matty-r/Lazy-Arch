@@ -30,8 +30,8 @@ nvidiaPackages-Config(){
     ;;
     *) 
       echo "Using ${USERVARIABLES[KERNEL]} kernel, change nvidia-dkms."
-      sudo yay -R nvidia
-      sudo yay -S nvidia-dkms
+      sudo yay -R nvidia --noconfirm
+      sudo yay -S nvidia-dkms --noconfirm
     ;;
   esac
 
@@ -211,6 +211,7 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
 
   ## Settings / Startup and Shutdown / desktop session
   kwriteconfig5 --file ~/.config/ksmserverrc --group General --key offerShutdown false
+  kwriteconfig5 --file ~/.config/ksmserverrc --group General --key confirmLogout false
 
   ##Settings / Plasma Style
   kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name Qogir-dark
