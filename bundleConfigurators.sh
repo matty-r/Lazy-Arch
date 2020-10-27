@@ -16,6 +16,28 @@ do
   shift
 done
 
+nvidiaPackages-Config(){
+  if [[  ${USERVARIABLES[KERNEL]} = "" ]]; then
+    USERVARIABLES[KERNEL]=$(retrieveSettings 'KERNEL')
+  fi
+
+  case ${USERVARIABLES[KERNEL]} in
+    "linux") 
+      echo "Using vanilla kernel. No change necessary."
+    ;;
+    "linux-lts") 
+      echo "Using LTS kernel, change to nvidia-lts."
+    ;;
+    *) 
+      echo "Using ${USERVARIABLES[KERNEL]} kernel, change nvidia-dkms."
+      sudo yay -R nvidia
+      sudo yay -S nvidia-dkms
+    ;;
+  esac
+
+  echo 'VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json' | sudo tee -a /etc/environment
+}
+
 btrfsPackages-Config(){
   if [[ ${USERVARIABLES[ROOTPART]} == "" ]]; then
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
@@ -24,8 +46,8 @@ btrfsPackages-Config(){
   yay -S --noconfirm snapper grub-btrfs snap-pac snapper-gui
 
   ##Enable grub boot crypto
-  ROOTUUID=$(sudo blkid -s UUID -o value ${USERVARIABLES[ROOTPART]})
-  sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='${ROOTUUID}':root"|' /etc/default/grub
+  ROOTUUID=$(sudo blkid -s UUID -o value "${USERVARIABLES[ROOTPART]}")
+  sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='"${ROOTUUID}"':root"|' /etc/default/grub
   sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
 
   ##Add the snapper config manually
@@ -37,11 +59,12 @@ btrfsPackages-Config(){
   sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
   sudo grub-mkconfig -o /boot/grub/grub.cfg
   sudo systemctl enable snapper-boot.timer
+
 }
 
 vboxGuestPackages-Config(){
   sudo systemctl enable vboxservice.service
-  echo "\"FS0:\EFI\refind\refind_x64.efi\"" | sudo tee -a /boot/startup.nsh
+  printf "\"FS0:\EFI\refind\refind_x64.efi\"" | sudo tee -a /boot/startup.nsh
 }
 
 qemuGuestPackages-Config(){
@@ -67,7 +90,7 @@ kdePackages-Config(){
   sudo mkdir /etc/sddm.conf.d
 
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key Session plasma
-  sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User ${USERVARIABLES[USERNAME]}
+  sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User "${USERVARIABLES[USERNAME]}"
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Theme --key Current breeze
 
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
@@ -86,7 +109,6 @@ kdePackages-Config(){
   kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
 
 }
-
 
 gnomePackages-Config(){
   sudo systemctl enable gdm
@@ -131,9 +153,9 @@ grubThemePackages-Config(){
 }
 
 kdeThemePackages-Config(){
-
   ## Installed the tiled menu
-  curl -L -O https://github.com/Zren/plasma-applet-tiledmenu/archive/v40.zip 
+  cd ~
+  curl -LO https://github.com/Zren/plasma-applet-tiledmenu/archive/v40.zip 
   unzip v40.zip
   cd ~/plasma-applet-tiledmenu-40/
   kpackagetool5 -t Plasma/Applet -i package
@@ -184,6 +206,12 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key theme __aurorae__svg__Qogir
 
+  ## Settings / Input Devices / Keyboard
+  kwriteconfig5 --file ~/.config/kcminputrc --group Keyboard --key NumLock 0
+
+  ## Settings / Startup and Shutdown / desktop session
+  kwriteconfig5 --file ~/.config/ksmserverrc --group General --key offerShutdown false
+
   ##Settings / Plasma Style
   kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name Qogir-dark
   
@@ -223,6 +251,18 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
 
 }
 
+gamingPackages-Config(){
+  cd ~
+  mkdir ~/wine-tkg-staging
+  cd ~/wine-tkg-staging
+  ## Download latest https://github.com/Frogging-Family/wine-tkg-git
+  DOWNLOADURL="$(curl -s https://api.github.com/repos/Frogging-Family/wine-tkg-git/releases/latest | grep -Po '(?<="browser_download_url": ").*?(?=")')"
+  TKGFILENAME="$(basename ${DOWNLOADURL})"
+  curl -LO "${DOWNLOADURL}"
+  sudo pacman -U "${TKGFILENAME}" --noconfirm
+  cd ~
+}
+
 #TODO
 rdpPackages-Config(){
   SESHNAME=""
@@ -257,20 +297,19 @@ rdpPackages-Config(){
 #retrieveSettings 'SETTINGNAME'
 retrieveSettings(){
   # Script Variables. DO NOT CHANGE THESE
-  BUNDLECONFIGPATH=$( readlink -m $( type -p $0 ))
+  BUNDLECONFIGPATH=$( readlink -m "$( type -p "$0" )")
   BUNDLECONFIGROOT=${BUNDLECONFIGPATH%/*}
 
-  SETTINGSPATH="$BUNDLECONFIGROOT/installsettings.cfg"
+  SETTINGSPATH="$BUNDLECONFIGROOT/installsettings.cfg" 
 
-  if [ ! -f $SETTINGSPATH ]; then
+  if [ ! -f "$SETTINGSPATH" ]; then
     echo 'Unable to import required settings. Exiting.'
     exit 1
   fi
 
   SETTINGNAME=$1
-  SETTING=$(cat $SETTINGSPATH | grep $1 | cut -f2,2 -d'=')
-
-  echo $SETTING
+  SETTING=$(grep "$SETTINGNAME" "$SETTINGSPATH" | cut -f2,2 -d'=')
+  echo "$SETTING"
 }
 
 if [[ $RUNCONFIG ]]; then
