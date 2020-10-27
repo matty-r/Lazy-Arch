@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 2.3
+# Version 2.5
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
