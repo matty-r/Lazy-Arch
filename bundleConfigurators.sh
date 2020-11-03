@@ -202,6 +202,7 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
 
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key BorderSize None
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key BorderSizeAuto false
+  kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft ''
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight IAX
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key theme __aurorae__svg__Qogir

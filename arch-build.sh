@@ -39,7 +39,7 @@ USERVARIABLES[ROOTPART]="/dev/vda2"
 USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
-SCRIPTPATH=$( readlink -m "$( type -p "$0" )")
+SCRIPTPATH=$( readlink -m $( type -p $0 ))
 SCRIPTROOT=${SCRIPTPATH%/*}
 BOOTDEVICE=""
 ROOTDEVICE=""
@@ -47,15 +47,20 @@ EFIPATH="/sys/firmware/efi/efivars"
 BOOTTYPE=""
 NETINT=""
 CPUTYPE=""
-GPUTYPE=""
+GPUBUNDLE=""
 INSTALLSTAGE=""
 
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/arch-build/master/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/softwareBundles.sh
+fi
+
+if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
+    echo "$(tput setaf 7)$(tput setab 1) **Check internet access. Unable to download required files.** $(tput sgr0)"
+    exit 1
 fi
 
 #Available Software Bundles
@@ -117,19 +122,31 @@ generateSettings(){
   exportSettings "SCRIPTPATH" "$SCRIPTPATH"
   exportSettings "SCRIPTROOT" "$SCRIPTROOT"
   #Find the currently used interface - used to enable dhcpcd on that interface
-  NETINT=$(ip link | grep "BROADCAST,MULTICAST,UP,LOWER_UP" | grep -oP '(?<=: ).*(?=: )')
-  exportSettings "NETINT" "$NETINT"
+  AVAILABLEINTERFACES=( $(ip route | grep default | grep -Po '(?<=dev ).*(?= proto)') )
+  for EXTERNALINTERFACE in "${AVAILABLEINTERFACES[@]}"
+  do
+    echo "Testing interface ${EXTERNALINTERFACE}."
+    ping -c4 -I "$EXTERNALINTERFACE" archlinux.org > /dev/null 2>&1
+    PINGRESULT=$?
+    if [ "$PINGRESULT" = 0 ]; then
+      NETINT="$EXTERNALINTERFACE"
+      echo "${NETINT} looks good, lets use that."
+      break
+    fi
+  done
+
+  exportSettings "NETINT" "${NETINT}"
   exportSettings "KERNEL" "${USERVARIABLES[KERNEL]}"
 
   #Determine if it's an EFI install or not
   if [ -d "$EFIPATH" ]
   then
     BOOTTYPE="EFI"
-    exportSettings "EFIPATH" $EFIPATH
+    exportSettings "EFIPATH" "$EFIPATH"
   else
     BOOTTYPE="BIOS"
   fi
-  exportSettings "BOOTTYPE" $BOOTTYPE
+  exportSettings "BOOTTYPE" "$BOOTTYPE"
 
   
   #set comparison to ignore case temporarily
@@ -176,20 +193,23 @@ generateSettings(){
   exportSettings "CPUTYPE" "$CPUTYPE"
 
   #Detect GPU type. Add the appropriate packages to install.
-  GPUTYPE=$(lspci -vnn | grep VGA)
-  if [[ $GPUTYPE =~ "nvidia" ]]; then
-    GPUTYPE="nvidia"
-    USERVARIABLES[BUNDLES]+=" $GPUTYPE"
-  elif [[ $GPUTYPE =~ "amd" ]]; then
-    GPUTYPE="amdgpu"
-    USERVARIABLES[BUNDLES]+=" $GPUTYPE"
-  elif [[ $GPUTYPE =~ "intelgpu" ]]; then
-    GPUTYPE="intelgpu"
-    USERVARIABLES[BUNDLES]+=" $GPUTYPE"
+  VGACONTROLLER=$(echo "$(lspci -vnn | grep VGA)" | tr '[:upper:]' '[:lower:]')
+  GFXCONTROLLER=$(echo "$(lspci -vnn | grep 3D)" | tr '[:upper:]' '[:lower:]')
+
+  if [[ ${GFXCONTROLLER} =~ "nvidia" && ${VGACONTROLLER} =~ "intel" ]]; then
+    GPUBUNDLE="nvidia nvidiaPrime"
+  elif [[ ${VGACONTROLLER} =~ "nvidia" ]]; then
+    GPUBUNDLE="nvidia"
+  elif [[ ${VGACONTROLLER} =~ "amd" ]]; then
+    GPUBUNDLE="amdgpu"
+  elif [[ ${VGACONTROLLER} =~ "intelgpu" ]]; then
+    GPUBUNDLE="intelgpu"
   else
-    GPUTYPE="vm"
+    GPUBUNDLE="vm"
   fi
-  exportSettings "GPUTYPE" "$GPUTYPE"
+
+  USERVARIABLES[BUNDLES]+=" $GPUBUNDLE"
+  exportSettings "GPUBUNDLE" "$GPUBUNDLE"
   exportSettings "BUNDLES" "${USERVARIABLES[BUNDLES]}"
   #reset comparisons
   shopt -u nocasematch
@@ -346,7 +366,7 @@ importSettings(){
   BOOTTYPE=$(retrieveSettings 'BOOTTYPE')
   NETINT=$(retrieveSettings 'NETINT')
   CPUTYPE=$(retrieveSettings 'CPUTYPE')
-  GPUTYPE=$(retrieveSettings 'GPUTYPE')
+  GPUBUNDLE=$(retrieveSettings 'GPUBUNDLE')
   INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
   
   USERVARIABLES[BUNDLES]=$(retrieveSettings 'BUNDLES')
@@ -366,7 +386,7 @@ importSettings(){
   echo "Imported BOOTTYPE=${BOOTTYPE}"
   echo "Imported NETINT=${NETINT}"
   echo "Imported CPUTYPE=${CPUTYPE}"
-  echo "Imported GPUTYPE=${GPUTYPE}"
+  echo "Imported GPUBUNDLE=${GPUBUNDLE}"
   echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
 
   echo "Imported USERNAME=${USERVARIABLES[USERNAME]}"

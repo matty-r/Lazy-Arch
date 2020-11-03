@@ -55,7 +55,7 @@ virtualPackages=(libvirt qemu virt-manager ebtables dnsmasq ovmf)
 rdpPackages=(xrdp-git xorgxrdp-git xorg-xinit xterm xorg-xrdb)
 dailyPackages=(protonmail-bridge-bin nextcloud-client)
 officePackages=(cups cups-pdf tesseract tesseract-data-eng pdftk libreoffice-fresh okular masterpdfeditor-free gscan2pdf otf-ibm-plex ttf-carlito ttf-caladea ttf-liberation)
-mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc) 
+mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc bluez bluez-utils pulseaudio-alsa) 
 adminPackages=(rsync filezilla networkmanager-openvpn remmina-git freerdp-git gnome-keyring)
 devPackages=(visual-studio-code-bin qtcreator)
 
@@ -80,6 +80,7 @@ esxiGuestPackages=(open-vm-tools xf86-input-vmmouse xf86-video-vmware mesa)
 
 #GPU Packages
 nvidiaPackages=(nvidia lib32-nvidia-utils nvidia-settings vulkan-icd-loader vulkan-headers lib32-vulkan-icd-loader)
+nvidiaPrimePackages=(nvidia-prime)
 amdgpuPackages=(mesa lib32-mesa xf86-video-amdgpu vulkan-radeon lib32-vulkan-radeon)
 
 ##Theming Packages
@@ -88,7 +89,7 @@ grubThemePackages=(arch-silence-grub-theme-git)
 
 
 ##Desktop Environment Packages
-kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager firefox)
+kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager firefox bluedevil)
 gnomePackages=(gnome gnome-extra networkmanager firefox)
 xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet firefox)
 
