@@ -1,0 +1,1 @@
+There are a lot of Arch Linux install scripts out there, but if you think you'd like to help then I won't stop you - the more the merrier :). Please create a fork, and create a pull-request from that fork for any fixes/improvements.

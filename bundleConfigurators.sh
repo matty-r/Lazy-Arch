@@ -38,6 +38,12 @@ nvidiaPackages-Config(){
   echo 'VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json' | sudo tee -a /etc/environment
 }
 
+nvidiaPrimePackages-Config(){
+  ##Add nvidia kernel modules
+  sudo sed -i "s/^MODULES=().*/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/" /etc/mkinitcpio.conf
+  sudo mkinitcpio -P
+}
+
 btrfsPackages-Config(){
   if [[ ${USERVARIABLES[ROOTPART]} == "" ]]; then
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
@@ -59,7 +65,12 @@ btrfsPackages-Config(){
   sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
   sudo grub-mkconfig -o /boot/grub/grub.cfg
   sudo systemctl enable snapper-boot.timer
+}
 
+##TODO
+touchpadPackages-Config(){
+  ##Natural Scrolling
+  ##Enable touchpad click
 }
 
 vboxGuestPackages-Config(){
@@ -107,6 +118,12 @@ kdePackages-Config(){
   kwriteconfig5 --file ~/.config/dolphinrc --group General --key ShowSelectionToggle false
   kwriteconfig5 --file ~/.config/dolphinrc --group IconsMode --key FontWeight 50
   kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
+  ## Set Dolphin to start up at home folder
+
+  ## Settings / Screen Edges. Top right desktop view, bottom right window view
+
+  ## Set icon view to show all, not just current desktop
+  
 
 }
 
@@ -202,6 +219,7 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
 
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key BorderSize None
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key BorderSizeAuto false
+  kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft ''
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight IAX
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key theme __aurorae__svg__Qogir
