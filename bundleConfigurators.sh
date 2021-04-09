@@ -49,7 +49,7 @@ btrfsPackages-Config(){
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
   fi
 
-  yay -S --noconfirm snapper grub-btrfs snap-pac snapper-gui
+  yay -S --noconfirm snapper grub-btrfs snap-pac
 
   ##Enable grub boot crypto
   ROOTUUID=$(sudo blkid -s UUID -o value "${USERVARIABLES[ROOTPART]}")
@@ -71,6 +71,7 @@ btrfsPackages-Config(){
 touchpadPackages-Config(){
   ##Natural Scrolling
   ##Enable touchpad click
+  echo "Not yet enabled"
 }
 
 vboxGuestPackages-Config(){
@@ -88,7 +89,7 @@ qemuGuestPackages-Config(){
   cd ~
 
   sudo mkinitcpio -P
-  sudo systemctl enable qemu-ga.service
+  sudo systemctl enable qemu-guest-agent.service
 }
 
 kdePackages-Config(){

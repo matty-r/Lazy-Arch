@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 2.5
+# Version 2.6
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
@@ -32,10 +32,12 @@ USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
 USERVARIABLES[BUNDLES]="kdeTheme grubTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
-USERVARIABLES[KERNEL]="linux" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
+USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
+USERVARIABLES[ROOTFILE]="BTRFS" ## EXT4 or BTRFS
+USERVARIABLES[ENCRYPT]="NO" ## YES or NO
 USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
@@ -112,6 +114,8 @@ generateSettings(){
   exportSettings "BOOTPART" "${USERVARIABLES[BOOTPART]}"
   exportSettings "BOOTMODE" "${USERVARIABLES[BOOTMODE]}"
   exportSettings "ROOTMODE" "${USERVARIABLES[ROOTMODE]}"
+  exportSettings "ROOTFILE" "${USERVARIABLES[ROOTFILE]}"
+  exportSettings "ENCRYPT" "${USERVARIABLES[ENCRYPT]}"
 
   #Grab the device chosen for the boot part
   BOOTDEVICE=$(getDevice "${USERVARIABLES[BOOTPART]}")
@@ -337,7 +341,9 @@ thirdInstallStage(){
   runCommand installSoftwareBundles "${USERVARIABLES[BUNDLES]}"
 
   echo "23. chroot; Run the btrfsPackages-config"
-  runCommand btrfsPackages-Config
+  if [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
+    runCommand btrfsPackages-Config
+  fi
 
   echo "24. Readying final boot"
   readyFinalBoot 
@@ -375,6 +381,8 @@ importSettings(){
   USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
   USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
   USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
+  USERVARIABLES[ROOTFILE]=$(retrieveSettings 'ROOTFILE')
+  USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
   USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
   USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
 
@@ -382,6 +390,8 @@ importSettings(){
   echo "Imported SCRIPTROOT=${SCRIPTROOT}"
   echo "Imported BOOTDEVICE=${BOOTDEVICE}"
   echo "Imported ROOTDEVICE=${ROOTDEVICE}"
+  echo "Imported ROOTFILE=${ROOTFILE}"
+  echo "Imported ENCRYPT=${ENCRYPT}"
   echo "Imported EFIPATH=${EFIPATH}"
   echo "Imported BOOTTYPE=${BOOTTYPE}"
   echo "Imported NETINT=${NETINT}"
@@ -448,6 +458,7 @@ partDisks(){
         if [[ $BOOTTYPE = "EFI" ]]; then
           #If the root device matches the boot device, don't setup device label
           if [ "$BOOTDEVICE" = "$ROOTDEVICE" ]; then
+          echo "EFI: Root partition will be created."
             runCommand parted -s "$ROOTDEVICE" -- mkpart "ARCH_ROOT" ext4 256MiB 100%
           else
             echo "EFI: Root partition will be created. Whole disk will be destroyed!"
@@ -468,18 +479,30 @@ partDisks(){
 ##FORMAT PARTITIONS
 
 formatParts(){
-  if [[ $BOOTTYPE = "EFI" ]]; then
+  FMTROOTPART="${USERVARIABLES[ROOTPART]}"
+  if [[ "$BOOTTYPE" = "EFI" ]]; then
     if [ "${USERVARIABLES[BOOTMODE]}" = "CREATE" ] || [ "${USERVARIABLES[BOOTMODE]}" = "FORMAT" ]; then
       runCommand mkfs.fat -F32 "${USERVARIABLES[BOOTPART]}"
     fi
 
     if [ "${USERVARIABLES[ROOTMODE]}" = "CREATE" ] || [ "${USERVARIABLES[ROOTMODE]}" = "FORMAT" ]; then
-      echo "Set up encryption for ${USERVARIABLES[ROOTPART]}"
-      runCommand cryptsetup -q -y -v --cipher=aes-xts-plain64 --key-size 512 --hash=sha512 luksFormat "${USERVARIABLES[ROOTPART]}"
-      runCommand cryptsetup luksOpen "${USERVARIABLES[ROOTPART]}" luks
+      if [[ "${USERVARIABLES[ENCRYPT]}" = "YES" ]]; then
+        echo "Set up encryption for ${USERVARIABLES[ROOTPART]}"
+        runCommand cryptsetup -q -y -v --cipher=aes-xts-plain64 --key-size 512 --hash=sha512 luksFormat "${USERVARIABLES[ROOTPART]}"
+        runCommand cryptsetup luksOpen "${USERVARIABLES[ROOTPART]}" luks
 
-      echo "Make btrfs on /dev/mapper/luks"
-      runCommand mkfs.btrfs -L ARCH_LUKS -f -f /dev/mapper/luks
+        FMTROOTPART="/dev/mapper/luks"
+      else 
+        echo "no encryption"
+      fi
+
+      if [[ "${USERVARIABLES[ROOTFILE]}" = "EXT4" ]]; then
+        echo "Make ext4 on root $FMTROOTPART"
+        runCommand mkfs.ext4 -L ARCH_ROOT -F -F $FMTROOTPART
+      elif [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
+        echo "Make btrfs on root $FMTROOTPART"
+        runCommand mkfs.btrfs -L ARCH_ROOT -f -f $FMTROOTPART
+      fi
     fi
   else
     if [ "${USERVARIABLES[ROOTMODE]}" = "CREATE" ] || [ "${USERVARIABLES[ROOTMODE]}" = "FORMAT" ]; then
@@ -491,38 +514,50 @@ formatParts(){
 
 ## Mount the file systems
 mountParts(){
-  #mount encrypted partition instead
-  echo "Mount new luks partition..."
-  runCommand mount -o compress=zstd /dev/mapper/luks /mnt
+  FMTROOTPART="${USERVARIABLES[ROOTPART]}"
+  if [[ "${USERVARIABLES[ENCRYPT]}" = "YES" ]]; then
+    FMTROOTPART="/dev/mapper/luks"
+  fi
 
-  #btrfs sub volumes
-  runCommand cd /mnt
-  runCommand btrfs subvolume create @
-  runCommand btrfs subvolume create @home
-  runCommand btrfs subvolume create @log
-  runCommand btrfs subvolume create @srv
-  runCommand btrfs subvolume create @pkg
-  runCommand btrfs subvolume create @tmp
-  runCommand btrfs subvolume create @snapshots
-  runCommand cd ~
-  runCommand umount /mnt
-  runCommand mount -o compress=zstd,subvol=@ /dev/mapper/luks /mnt
+  if [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
+    #mount encrypted partition instead
+    echo "Mount root partition... (BTRFS)"
+    runCommand mount -o compress=zstd $FMTROOTPART /mnt
 
-  runCommand cd /mnt
-  runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp,.snapshots}
+    #btrfs sub volumes
+    runCommand cd /mnt
+    runCommand btrfs subvolume create @
+    runCommand btrfs subvolume create @home
+    runCommand btrfs subvolume create @log
+    runCommand btrfs subvolume create @srv
+    runCommand btrfs subvolume create @pkg
+    runCommand btrfs subvolume create @tmp
+    runCommand btrfs subvolume create @snapshots
+    runCommand cd ~
+    runCommand umount /mnt
+    runCommand mount -o compress=zstd,subvol=@ $FMTROOTPART /mnt
 
-  runCommand mount -o compress=zstd,subvol=@home /dev/mapper/luks home
-  runCommand mount -o compress=zstd,subvol=@log /dev/mapper/luks var/log
-  runCommand mount -o compress=zstd,subvol=@pkg /dev/mapper/luks var/cache/pacman/pkg
-  runCommand mount -o compress=zstd,subvol=@srv /dev/mapper/luks srv
-  runCommand mount -o compress=zstd,subvol=@tmp /dev/mapper/luks tmp
-  runCommand mount -o compress=zstd,subvol=@snapshots /dev/mapper/luks .snapshots
+    runCommand cd /mnt
+    runCommand mkdir -p {home,srv,var/{log,cache/pacman/pkg},tmp,.snapshots}
 
-  if [[ $BOOTTYPE = "EFI" ]]; then
+    runCommand mount -o compress=zstd,subvol=@home $FMTROOTPART home
+    runCommand mount -o compress=zstd,subvol=@log $FMTROOTPART var/log
+    runCommand mount -o compress=zstd,subvol=@pkg $FMTROOTPART var/cache/pacman/pkg
+    runCommand mount -o compress=zstd,subvol=@srv $FMTROOTPART srv
+    runCommand mount -o compress=zstd,subvol=@tmp $FMTROOTPART tmp
+    runCommand mount -o compress=zstd,subvol=@snapshots $FMTROOTPART .snapshots
+  elif [[ "${USERVARIABLES[ROOTFILE]}" = "EXT4" ]]; then
+    echo "Mount root partition... (EXT4)"
+    runCommand mount $FMTROOTPART /mnt
+  fi
+
+
+  if [[ "$BOOTTYPE" = "EFI" ]]; then
+
     runCommand mkdir /mnt/boot
-    runCommand mount "${USERVARIABLES[BOOTPART]}" /mnt/boot
+    runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
   else
-    runCommand mount "${USERVARIABLES[ROOTPART]}" /mnt
+    runCommand mount ${USERVARIABLES[ROOTPART]} /mnt
   fi
 }
 
@@ -536,7 +571,7 @@ setLocalMirrors(){
     echo "Write Local Mirrors to /etc/pacman.d/mirrorlist"
   else
   
-  runCommand curl -s "https://www.archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
+  runCommand curl -s "https://archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
 
   fi
 }
@@ -624,7 +659,9 @@ addHosts(){
 
 ### GENERATE INITRAMFS
 genInit(){
-  runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
+  if [[ "${USERVARIABLES[ENCRYPT]}" = "YES" ]]; then
+    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
+  fi
   runCommand mkinitcpio -P
 }
 
@@ -635,7 +672,7 @@ rootPassword(){
 
 ### INSTALL BOOTLOADER AND MICROCODE
 readyForBoot(){ 
-  if [[ $BOOTTYPE = "EFI" ]]; then
+  if [[ "$BOOTTYPE" = "EFI" ]]; then
     runCommand pacman -S --noconfirm grub "$CPUTYPE"'-ucode' os-prober efibootmgr
     runCommand grub-install --target=x86_64-efi --efi-directory=/boot  --bootloader-id=GRUB --recheck
     runCommand grub-mkconfig -o /boot/grub/grub.cfg
