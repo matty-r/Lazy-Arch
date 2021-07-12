@@ -346,6 +346,7 @@ thirdInstallStage(){
   fi
 
   echo "24. Readying final boot"
+  runCommand grubPackages-Config
   readyFinalBoot 
 }
 
@@ -709,7 +710,7 @@ createUser(){
 enableMultilibPackages(){
   runCommand sudo sed -i '/#\[multilib\]/a Include = \/etc\/pacman.d\/mirrorlist' /etc/pacman.conf
   runCommand sudo sed -i "s/#\[multilib\]/[multilib]/" /etc/pacman.conf
-  runCommand sudo pacman -Syyu
+  runCommand sudo pacman -Syyu --noconfirm
 }
 
 ###### make yay

@@ -44,17 +44,30 @@ nvidiaPrimePackages-Config(){
   sudo mkinitcpio -P
 }
 
+grubPackages-Config(){
+  if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
+    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+  fi
+
+  if [[ "${USERVARIABLES[ENCRYPT]}" == "" ]]; then
+      USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
+  fi
+
+  if [[ "${USERVARIABLES[ENCRYPT]}" == "YES" ]]; then
+      ##Enable grub boot crypto
+      ROOTUUID=$(sudo blkid -s UUID -o value "${USERVARIABLES[ROOTPART]}")
+      sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='"${ROOTUUID}"':root"|' /etc/default/grub
+      sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
+      sudo grub-mkconfig -o /boot/grub/grub.cfg
+  fi
+}
+
 btrfsPackages-Config(){
-  if [[ ${USERVARIABLES[ROOTPART]} == "" ]]; then
+  if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
   fi
 
   yay -S --noconfirm snapper grub-btrfs snap-pac
-
-  ##Enable grub boot crypto
-  ROOTUUID=$(sudo blkid -s UUID -o value "${USERVARIABLES[ROOTPART]}")
-  sudo sed -i 's|^GRUB_CMDLINE_LINUX="".*|GRUB_CMDLINE_LINUX="cryptdevice=UUID='"${ROOTUUID}"':root"|' /etc/default/grub
-  sudo sed -i 's|^#GRUB_ENABLE_CRYPTODISK=y.*|GRUB_ENABLE_CRYPTODISK=y|' /etc/default/grub
 
   ##Add the snapper config manually
   sudo cp /etc/snapper/config-templates/default /etc/snapper/configs/root
@@ -93,7 +106,7 @@ qemuGuestPackages-Config(){
 }
 
 kdePackages-Config(){
-  if [[ ${USERVARIABLES[USERNAME]} == "" ]]; then
+  if [[ "${USERVARIABLES[USERNAME]}" == "" ]]; then
     USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
   fi
 
@@ -172,14 +185,15 @@ grubThemePackages-Config(){
 
 kdeThemePackages-Config(){
   ## Installed the tiled menu
-  cd ~
-  curl -LO https://github.com/Zren/plasma-applet-tiledmenu/archive/v40.zip 
-  unzip v40.zip
-  cd ~/plasma-applet-tiledmenu-40/
-  kpackagetool5 -t Plasma/Applet -i package
+  ## Remove
+  #cd ~
+  #curl -LO https://github.com/Zren/plasma-applet-tiledmenu/archive/v40.zip 
+  #unzip v40.zip
+  #cd ~/plasma-applet-tiledmenu-40/
+  #kpackagetool5 -t Plasma/Applet -i package
   
   ## WIP - Change application menu to tiled menu
-  sudo sed -i 's|org.kde.plasma.kickoff|com.github.zren.tiledmenu|' /usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js
+  #sudo sed -i 's|org.kde.plasma.kickoff|com.github.zren.tiledmenu|' /usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js
 
 echo 'kickoff.currentConfigGroup = ["Configuration","General"] 
 kickoff.writeConfig("appDescription", "hidden")
@@ -202,28 +216,34 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
 
   ##Apply the themes to qogir and icons set to numix
-  kwriteconfig5 --file ~/.config/kdeglobals --group General --key ColorScheme Qogir
-  kwriteconfig5 --file ~/.config/kdeglobals --group General --key Name Breeze
-  kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Numix-Circle
-  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key widgetStyle Breeze
-
-
-  kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme Qogir
-  kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key Name Qogir
+  kwriteconfig5 --file ~/.config/kdeglobals --group General --key ColorScheme BreezeLight
+  kwriteconfig5 --file ~/.config/kdeglobals --group General --key Name 'Breeze Light'
+  kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Papirus
+  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key LookAndFeelPackage org.kde.breezetwilight.desktop
+  kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
+  
+  kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme BreezeLight
+  kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key Name 'Breeze Light'
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key widgetStyle Breeze
-  kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group Icons --key Theme Numix-Circle
+  kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group Icons --key Theme Papirus
   
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key BorderActivate 9
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key DesktopLayout org.kde.breeze.desktop
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key DesktopListLayout org.kde.breeze.desktop
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key LayoutName org.kde.breeze.desktop
 
+  kwriteconfig5 --file ~/.config/kwinrc --group Effect-PresentWindows --key BorderActivate 7
+  kwriteconfig5 --file ~/.config/kwinrc --group Effect-DesktopGrid --key BorderActivateAll 9
+
+  kwriteconfig5 --file ~/.config/kwinrc --group Desktops --key Number 4
+  kwriteconfig5 --file ~/.config/kwinrc --group Desktops --key Rows 2
+
+  kwriteconfig5 --file ~/.config/kwinrc --group KDE --key AnimationDurationFactor 0.25
+
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key BorderSize None
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key BorderSizeAuto false
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft ''
   kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight IAX
-  kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
-  kwriteconfig5 --file ~/.config/kwinrc --group org.kde.kdecoration2 --key theme __aurorae__svg__Qogir
 
   ## Settings / Input Devices / Keyboard
   kwriteconfig5 --file ~/.config/kcminputrc --group Keyboard --key NumLock 0
@@ -233,13 +253,14 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/ksmserverrc --group General --key confirmLogout false
 
   ##Settings / Plasma Style
-  kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name Qogir-dark
+  kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name breeze-dark 
+  kwriteconfig5 --file ~/.config/plasmarc --group Theme-plasmathemeexplorer --key name breeze-dark 
   
   ##Settings / Screen Locker
-  kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key Theme com.github.vinceliuice.Qogir
-  kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.potd
-  kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.potd --group General --key Category 1065374
-  kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.potd --group General --key Provider unsplash
+  # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key Theme com.github.vinceliuice.Qogir
+  # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.potd
+  # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.potd --group General --key Category 1065374
+  # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.potd --group General --key Provider unsplash
 
   ##Settings / Application Style / GTK 3
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-application-prefer-dark-theme false
@@ -249,21 +270,20 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-enable-animations true
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-fallback-icon-theme Adwaita
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-font-name 'Noto Sans, 10'
-  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-icon-theme-name Numix-Circle
+  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-icon-theme-name Papirus
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-menu-images true
-  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-modules colorreload-gtk-module
-  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-primary-button-warps-slider false
-  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-theme-name Qogir-win 
+  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-modules colorreload-gtk-module:window-decorations-gtk-module
+  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-primary-button-warps-slider true
+  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-theme-name Breeze 
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-toolbar-style 3
 
   ##Settings / Application Style / GTK 2
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-enable-animations 1
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-cursor-theme-name '"breeze_cursors"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-primary-button-warps-slider 0
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-cursor-theme-neme '"breeze_cursors"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-primary-button-warps-slider 1
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-font-name '"Noto Sans,  10"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-theme-name '"Qogir-win"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-icon-theme-name '"Numix-Circle"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-theme-name '"Breeze"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-icon-theme-name '"Papirus"'
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-fallback-icon-theme '"Adwaita"'
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-toolbar-style 3
   kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-menu-images 1
@@ -276,8 +296,8 @@ gamingPackages-Config(){
   mkdir ~/wine-tkg-staging
   cd ~/wine-tkg-staging
   ## Download latest https://github.com/Frogging-Family/wine-tkg-git
-  DOWNLOADURL="$(curl -s https://api.github.com/repos/Frogging-Family/wine-tkg-git/releases/latest | grep -Po '(?<="browser_download_url": ").*?(?=")')"
-  TKGFILENAME="$(basename ${DOWNLOADURL})"
+  DOWNLOADURL="$(curl -sX GET https://api.github.com/repos/Frogging-Family/wine-tkg-git/releases/latest | grep -Po '(?<="browser_download_url": ").*?(?=")' | grep -i staging)"
+  TKGFILENAME="$(basename "${DOWNLOADURL}")"
   curl -LO "${DOWNLOADURL}"
   sudo pacman -U "${TKGFILENAME}" --noconfirm
   cd ~
