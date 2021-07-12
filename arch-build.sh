@@ -572,7 +572,7 @@ setLocalMirrors(){
   else
   
   runCommand curl -s "https://archlinux.org/mirrorlist/?country=${COUNTRYCODE}&protocol=https&use_mirror_status=on" | sed "s/#Server/Server/" > /etc/pacman.d/mirrorlist
-
+  runCommand sed -i '/options/a ParallelDownloads = 5' /etc/pacman.conf
   fi
 }
 
