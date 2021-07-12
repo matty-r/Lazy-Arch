@@ -563,8 +563,8 @@ mountParts(){
 
 
 setLocalMirrors(){
-  GEOLOCATE=$(curl -sX GET "https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com)")
-  COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="alpha2":").*?(?=")')
+  GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
+  COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
   echo "MIRRORS will be retrieved from $COUNTRYCODE"
 
   if [[ $DRYRUN -eq 1 ]]; then
@@ -613,8 +613,8 @@ chrootTime(){
 
 ### Set the time zone
 setTime(){
-  GEOLOCATE=$(curl -s --location --request GET "https://ep.api.getfastah.com/whereis/v1/json/$(curl -s icanhazip.com)" --header 'Fastah-Key:  0f7b832d16404eb8a8386b4675347e83')
-  TIMEZONE=$(echo "$GEOLOCATE" | grep -Po '(?<="tz":").*?(?=")')
+  GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
+  TIMEZONE=$(echo "$GEOLOCATE" | grep -Po '(?<="timezone":").*?(?=",)')
   echo "TIMEZONE will be set to $TIMEZONE"
 
   runCommand ln -sf /usr/share/zoneinfo/"$TIMEZONE" /etc/localtime
@@ -623,9 +623,9 @@ setTime(){
 
 ### Uncomment en_US.UTF-8 UTF-8 and other needed locales in /etc/locale.gen
 genLocales(){
-  GEOLOCATE=$(curl -sX GET "https://api.ipgeolocationapi.com/geolocate/$(curl -s icanhazip.com)")
-  COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="alpha2":").*?(?=")')
-  LANGUAGE=$(echo "$GEOLOCATE" | grep -Po '(?<="languages_official":\[").*?(?=")')
+  GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
+  COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
+  LANGUAGE=$(curl -sX GET "https://restcountries.eu/rest/v2/alpha/au" | grep -Po '(?<="iso639_1":").*?(?=")')
   LANGCODE="${LANGUAGE}_${COUNTRYCODE}.UTF-8"
   echo "LANGUAGE CODE will be set to $LANGCODE"
 
