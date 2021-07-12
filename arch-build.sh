@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 2.6
+# Version 2.7
 # Arch Linux INSTALL SCRIPT
 
 #Exit on error
@@ -32,7 +32,7 @@ USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
 USERVARIABLES[BUNDLES]="kdeTheme grubTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
-USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="kernel", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
+USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"

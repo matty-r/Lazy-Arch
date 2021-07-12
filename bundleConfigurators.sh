@@ -213,7 +213,7 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 plugin org.kde.panel
 
   ##temporary fix for the dark theme colours being incorrect
-  sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
+ # sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
 
   ##Apply the themes to qogir and icons set to numix
   kwriteconfig5 --file ~/.config/kdeglobals --group General --key ColorScheme BreezeLight

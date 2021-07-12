@@ -84,7 +84,7 @@ nvidiaPrimePackages=(nvidia-prime)
 amdgpuPackages=(mesa lib32-mesa xf86-video-amdgpu vulkan-radeon lib32-vulkan-radeon)
 
 ##Theming Packages
-kdeThemePackages=(papirus)
+kdeThemePackages=(papirus-icon-theme-git)
 grubThemePackages=(arch-silence-grub-theme-git)
 
 
