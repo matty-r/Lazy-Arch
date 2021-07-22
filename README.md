@@ -36,11 +36,13 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 1. Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
 
 1a. Download:
+
     ```sh
     curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
     ```
 
 1b. or Clone - Using git (Least Likely option - as git isn't installed on the arch iso)
+
     ```sh
     git clone https://github.com/matty-r/lazy-arch
     cd lazy-arch
