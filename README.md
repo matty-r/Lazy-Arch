@@ -36,21 +36,16 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 1. Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
 
 1a. Download:
-```sh
-curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
-chmod +x arch-build.sh
-./arch-build.sh -d
-./arch-build.sh
-```
+    ```sh
+    curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
+    ```
 
 1b. or Clone - Using git (Least Likely option - as git isn't installed on the arch iso)
-```sh
-git clone https://github.com/matty-r/lazy-arch
-cd lazy-arch
-mv * ~/
-chmod +x arch-build.sh
-./arch-build.sh
-```
+    ```sh
+    git clone https://github.com/matty-r/lazy-arch
+    cd lazy-arch
+    mv * ~/
+    ```
 
 3. Edit arch-build.sh with the appropriate bundles you need
 
@@ -69,25 +64,25 @@ chmod +x arch-build.sh
     ```
     
 3. Set arch-build.sh to executable
-```sh
-chmod +x arch-build.sh
-```
+    ```sh
+    chmod +x arch-build.sh
+    ```
 
 5. In the first instance, execute with ./arch-build.sh -d (This will display all of the commands the script intends to run, without making any system changes)
-```sh
-./arch-build.sh -d
-```
+    ```sh
+    ./arch-build.sh -d
+    ```
 
 7. If you're happy, Execute ./arch-build.sh.
-```sh
-./arch-build.sh
-```
+    ```sh
+    ./arch-build.sh
+    ```
 
 ### Usage - Bundle Configurators
-
+```sh
 * ./bundleConfigurators.sh {bundle name} to run the associated configurator, example ./bundleConfigurators.sh kde
-
+```
 ### Usage - Software Bundles
-
+```sh
 * ./softwareBundles.sh {bundle name} to run the associated bundle installer. Will ask if you want to run the associated configurator if available.
-
+```
