@@ -32,8 +32,27 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 
 ### Usage - Full Build
 
+
 1. Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
-2. Edit arch-build.sh with the appropriate bundles you need
+
+1a. Download:
+```sh
+curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
+chmod +x arch-build.sh
+./arch-build.sh -d
+./arch-build.sh
+```
+
+1b. or Clone - Using git (Least Likely option - as git isn't installed on the arch iso)
+```sh
+git clone https://github.com/matty-r/lazy-arch
+cd lazy-arch
+mv * ~/
+chmod +x arch-build.sh
+./arch-build.sh
+```
+
+3. Edit arch-build.sh with the appropriate bundles you need
 
     ##### *Example User Variables:*
     ```
@@ -50,22 +69,17 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
     ```
     
 3. Set arch-build.sh to executable
-4. In the first instance, execute with ./arch-build.sh -d (This will display all of the commands the script intends to run, without making any system changes)
-5. If you're happy, Execute ./arch-build.sh. If you wish to log the entire install, execute with script -c ./arch-build.sh arch-build.log 
-
 ```sh
-curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
 chmod +x arch-build.sh
-./arch-build.sh -d
-./arch-build.sh
 ```
 
-Using git (Least Likely option - as git isn't installed on the arch iso)
+5. In the first instance, execute with ./arch-build.sh -d (This will display all of the commands the script intends to run, without making any system changes)
 ```sh
-git clone https://github.com/matty-r/lazy-arch
-cd lazy-arch
-mv * ~/
-chmod +x arch-build.sh
+./arch-build.sh -d
+```
+
+7. If you're happy, Execute ./arch-build.sh.
+```sh
 ./arch-build.sh
 ```
 
