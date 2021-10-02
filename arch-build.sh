@@ -626,7 +626,10 @@ setTime(){
 genLocales(){
   GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
-  LANGUAGE=$(curl -sX GET "https://restcountries.eu/rest/v2/alpha/au" | grep -Po '(?<="iso639_1":").*?(?=")')
+  COUNTRYINFO=$(curl -sX GET "https://raw.githubusercontent.com/annexare/Countries/master/data/countries.json" | tr -d '\n' | tr -d ' ')
+  LANGUAGES=$(echo $COUNTRYINFO | grep -Po '(?<="'$COUNTRYCODE'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
+  #LANGUAGE=$(curl -sX GET "https://restcountries.eu/rest/v2/alpha/au" | grep -Po '(?<="iso639_1":").*?(?=")')
+  LANGUAGE=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
   LANGCODE="${LANGUAGE}_${COUNTRYCODE}.UTF-8"
   echo "LANGUAGE CODE will be set to $LANGCODE"
 
