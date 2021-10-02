@@ -70,7 +70,7 @@ btrfsPackages-Config(){
   yay -S --noconfirm snapper grub-btrfs snap-pac
 
   ##Add the snapper config manually
-  sudo cp /etc/snapper/config-templates/default /etc/snapper/configs/root
+  sudo cp /usr/share/snapper/config-templates/default /etc/snapper/configs/root
   sudo sed -i 's/SNAPPER_CONFIGS=""/SNAPPER_CONFIGS="root"/' /etc/conf.d/snapper
   
   ##enable grub snapshots
