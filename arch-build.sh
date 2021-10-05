@@ -299,8 +299,8 @@ secondInstallStage(){
   echo "10. chroot: Import Settings"
   importSettings
 
-  echo "Reset local mirrors -- change to just copy previous /etc/pacman.conf and /etc/pacman.d/mirrorlist"##TODO
-  setLocalMirrors
+  #echo "Re-apply local mirrors"
+  #setLocalMirrors
 
   echo "11. chroot: Set root password"
   rootPassword
@@ -507,7 +507,13 @@ formatParts(){
     fi
   else
     if [ "${USERVARIABLES[ROOTMODE]}" = "CREATE" ] || [ "${USERVARIABLES[ROOTMODE]}" = "FORMAT" ]; then
-      runCommand mkfs.ext4 -f -f "${USERVARIABLES[ROOTPART]}"
+      if [[ "${USERVARIABLES[ROOTFILE]}" = "EXT4" ]]; then
+        echo "Make ext4 on root $FMTROOTPART"
+        runCommand mkfs.ext4 -L ARCH_ROOT -F -F $FMTROOTPART
+      elif [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
+        echo "Make btrfs on root $FMTROOTPART"
+        runCommand mkfs.btrfs -L ARCH_ROOT -f -f $FMTROOTPART
+      fi
     fi
   fi
 }
@@ -562,7 +568,6 @@ mountParts(){
   fi
 }
 
-
 setLocalMirrors(){
   GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
@@ -610,6 +615,8 @@ chrootTime(){
   runCommand cp "$SCRIPTROOT"/softwareBundles.sh /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp "$SCRIPTROOT"/bundleConfigurators.sh /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp "$SCRIPTROOT"/installsettings.cfg /mnt/home/"${USERVARIABLES[USERNAME]}"
+  runCommand cp /etc/pacman.conf /mnt/etc/
+  runCommand cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/
 }
 
 ### Set the time zone

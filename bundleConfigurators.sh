@@ -94,7 +94,7 @@ vboxGuestPackages-Config(){
 
 qemuGuestPackages-Config(){
   sudo sed -i "s/^MODULES=().*/MODULES=(virtio virtio_blk virtio_pci virtio_net)/" /etc/mkinitcpio.conf
-
+  sudo yay -S libxfont2 --noconfirm #Required to build xf86-video-qxl-git
   mkdir ~/xf86-video-qxl-git
   cd ~/xf86-video-qxl-git
   curl https://gist.githubusercontent.com/matty-r/200bed9bfea6e920ac71701941f66a06/raw/bfb2fa9afdb0d4a56bf9ce010cbe703f00e5a227/PKGBUILD > PKGBUILD
