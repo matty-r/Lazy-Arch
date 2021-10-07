@@ -75,11 +75,15 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
     ./arch-build.sh
     ```
 
-### Usage - Bundle Configurators
+#### Usage - Bundle Configurators
+Running this is only required after installation as they are ran automatically as part of the full build.
+
 ```sh
 * ./bundleConfigurators.sh {bundle name} to run the associated configurator, example ./bundleConfigurators.sh kde
 ```
-### Usage - Software Bundles
+#### Usage - Software Bundles
+Running this is only required after installation as they are ran automatically as part of the full build.
+
 ```sh
 * ./softwareBundles.sh {bundle name} to run the associated bundle installer. Will ask if you want to run the associated configurator if available.
 ```
