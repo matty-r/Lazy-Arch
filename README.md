@@ -27,7 +27,6 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 * Snapshots integrated into GRUB
 * GRUB Boot Manager
 * Software Bundles with scripted configuration (Such as Steam, Lutris, RDP etc..)
-* Full Theme bundle for KDE (Qogir + Tiled Menu)
 * Sane defaults for KDE
 
 ### Usage - Full Build
