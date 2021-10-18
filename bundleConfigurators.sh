@@ -114,6 +114,18 @@ kdePackages-Config(){
   sudo systemctl enable sddm
   sudo mkdir /etc/sddm.conf.d
 
+  ## disable bitmap fonts
+  mkdir ~/.config/fontconfig/conf.d/
+echo '<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <match target="font">
+    <edit name="embeddedbitmap" mode="assign">
+      <bool>false</bool>
+    </edit>
+  </match>
+</fontconfig>' | tee -a ~/.config/fontconfig/conf.d/20-no-embedded.conf
+
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key Session plasma
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User "${USERVARIABLES[USERNAME]}"
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Theme --key Current breeze
