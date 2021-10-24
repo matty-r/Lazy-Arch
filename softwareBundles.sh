@@ -4,7 +4,7 @@ SOFTWAREBUNDLESROOT=${SOFTWAREBUNDLESPATH%/*}
 
 declare -a gamingPackages nvidiaPackages virtualPackages rdpPackages dailyPackages officePackages mediaPackages
 declare -a adminPackages devPackages kdePackages gnomePackages xfcePackages kdeThemePackages grubThemePackages
-declare -a vboxGuestPackages qemuGuestPackages hyperGuestPackages amdgpuPackages esxiGuestPackages
+declare -a vboxGuestPackages qemuGuestPackages hyperGuestPackages amdgpuPackages esxiGuestPackages laptopPackages
 declare -A availableBundles
 
 #Software Bundles
@@ -16,6 +16,9 @@ availableBundles[office]=officePackages
 availableBundles[media]=mediaPackages
 availableBundles[admin]=adminPackages
 availableBundles[dev]=devPackages
+
+#Platform Bundles
+availableBundles[laptop]=laptopPackages
 
 #Guest Type Bundles
 availableBundles[vboxGuest]=vboxGuestPackages
@@ -62,6 +65,8 @@ devPackages=(visual-studio-code-bin qtcreator)
 #Boot Packages
 ## TODO
 #grubPackages=()
+
+laptopPackages=(power-profiles-daemon)
 
 #Wine Gaming Packages
 #https://github.com/lutris/lutris/wiki/Game:-Blizzard-App
