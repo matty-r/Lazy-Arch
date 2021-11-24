@@ -157,7 +157,9 @@ generateSettings(){
   shopt -s nocasematch
 
   #Detect platform type. Add the appropriate packages to install.
-  if [[ $(hostnamectl | grep Chassis | cut -f2,2 -d':' | xargs) =~ 'vm' ]]; then
+  PLATFORM=$(hostnamectl | grep Chassis | cut -f2,2 -d':' | xargs)
+
+  if [[ $PLATFORM =~ 'vm' ]]; then
     VMTYPE=$(hostnamectl | grep Virtualization | cut -f2,2 -d':' | xargs)
     case $VMTYPE in
       'kvm' )
@@ -176,8 +178,8 @@ generateSettings(){
     if [[ ! "${USERVARIABLES[BUNDLES]}" =~ $PLATFORM ]]; then
       USERVARIABLES[BUNDLES]+=" $PLATFORM"
     fi
-  else
-    PLATFORM="phys"
+  elif [[ $PLATFORM =~ 'laptop' ]]; then
+    USERVARIABLES[BUNDLES]+=" $PLATFORM"
   fi
 
   #Add the selected desktop to the bundles - if it isn't there already
