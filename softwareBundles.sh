@@ -4,7 +4,7 @@ SOFTWAREBUNDLESROOT=${SOFTWAREBUNDLESPATH%/*}
 
 declare -a gamingPackages nvidiaPackages virtualPackages rdpPackages dailyPackages officePackages mediaPackages
 declare -a adminPackages devPackages kdePackages gnomePackages xfcePackages kdeThemePackages grubThemePackages
-declare -a vboxGuestPackages qemuGuestPackages hyperGuestPackages amdgpuPackages esxiGuestPackages laptopPackages
+declare -a vboxGuestPackages qemuGuestPackages hyperGuestPackages amdgpuPackages esxiGuestPackages laptopPackages dockerPackages
 declare -A availableBundles
 
 #Software Bundles
@@ -16,6 +16,7 @@ availableBundles[office]=officePackages
 availableBundles[media]=mediaPackages
 availableBundles[admin]=adminPackages
 availableBundles[dev]=devPackages
+availableBundles[docker]=dockerPackages
 
 #Platform Bundles
 availableBundles[laptop]=laptopPackages
@@ -61,6 +62,7 @@ officePackages=(cups cups-pdf system-config-printer tesseract tesseract-data-eng
 mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc bluez bluez-utils pulseaudio-alsa) 
 adminPackages=(rsync filezilla networkmanager-openvpn remmina-git freerdp-git gnome-keyring)
 devPackages=(visual-studio-code-bin qtcreator)
+dockerPackages=(docker docker-compose)
 
 #Boot Packages
 ## TODO

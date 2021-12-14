@@ -44,6 +44,15 @@ nvidiaPrimePackages-Config(){
   sudo mkinitcpio -P
 }
 
+dockerPackages-Config(){
+  if [[  ${USERVARIABLES[USERNAME]} = "" ]]; then
+    USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+  fi
+
+  sudo systemctl enable docker
+  sudo gpasswd -a "${USERVARIABLES[USERNAME]}" docker
+}
+
 grubPackages-Config(){
   if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
