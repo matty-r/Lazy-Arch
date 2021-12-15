@@ -18,6 +18,16 @@ do
     -p|--prompt)
         PROMPT=1
     ;;
+    --rootpwd)
+        ROOTPWD="$2"
+        echo $ROOTPWD
+        shift
+    ;;
+    --userpwd)
+        USERPWD="$2"
+        echo $USERPWD
+        shift
+    ;;
     *)
       echo "Unknown parameter passed: $1"
       exit 1
@@ -30,7 +40,7 @@ done
 declare -A USERVARIABLES
 USERVARIABLES[USERNAME]="username"
 USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="kdeTheme grubTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
+USERVARIABLES[BUNDLES]="kdeTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
 USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
 USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
@@ -253,6 +263,14 @@ driver(){
 }
 
 firstInstallStage(){
+  echo "0. Set passwords"
+  ROOTPWD=""
+  read -sp 'ROOT Password: ' ROOTPWD
+  echo
+  USERPWD=""
+  read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
+  echo
+
   echo "1. Generate Settings"
   generateSettings
 
@@ -284,7 +302,7 @@ firstInstallStage(){
     thirdInstallStage
   else
     #Go into chroot. Should start at secondInstallStage
-    arch-chroot /mnt ./home/"${USERVARIABLES[USERNAME]}"/arch-build.sh
+    arch-chroot /mnt ./home/"${USERVARIABLES[USERNAME]}"/arch-build.sh --rootpwd "$ROOTPWD" --userpwd "$USERPWD"
 
     #Go into chroot as new user. Should start at thirdInstallStage as new user.
     arch-chroot /mnt su "${USERVARIABLES[USERNAME]}" ./home/"${USERVARIABLES[USERNAME]}"/arch-build.sh
@@ -680,7 +698,14 @@ genInit(){
 
 ### ROOT PASSWORD
 rootPassword(){
-  runCommand passwd
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Set root password to $ROOTPWD"
+  else
+    echo "root:$ROOTPWD" | chpasswd
+    echo
+  fi
+  
+  #runCommand passwd
 }
 
 ### INSTALL BOOTLOADER AND MICROCODE
@@ -703,7 +728,15 @@ createUser(){
   runCommand gpasswd -a "${USERVARIABLES[USERNAME]}" wheel
   ####### change user password
   runCommand echo "Set password for ${USERVARIABLES[USERNAME]}"
-  runCommand passwd "${USERVARIABLES[USERNAME]}"
+  
+  if [[ $DRYRUN -eq 1 ]]; then
+    echo "Set User password to $USERPWD"
+  else
+    echo "${USERVARIABLES[USERNAME]}:$USERPWD" | chpasswd
+  fi
+  ## runCommand passwd "${USERVARIABLES[USERNAME]}"
+  
+  
   ###### enable wheel group for sudoers
   runCommand sed -i "s/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/" /etc/sudoers
   ###### enable wheel group for sudoers - no password. TEMPORARY
