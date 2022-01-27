@@ -46,7 +46,7 @@ USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
-USERVARIABLES[ROOTFILE]="BTRFS" ## EXT4 or BTRFS
+USERVARIABLES[ROOTFILE]="F2FS" ## EXT4 or BTRFS or F2FS
 USERVARIABLES[ENCRYPT]="NO" ## YES or NO
 USERVARIABLES[ROOTMODE]="CREATE"
 
@@ -360,9 +360,11 @@ thirdInstallStage(){
   echo "22. chroot: Install selected bundles"
   runCommand installSoftwareBundles "${USERVARIABLES[BUNDLES]}"
 
-  echo "23. chroot; Run the btrfsPackages-config"
+  echo "23. chroot; Run the file system packages "
   if [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
     runCommand btrfsPackages-Config
+  elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
+    runCommand f2fsPackages-Config
   fi
 
   echo "24. Readying final boot"
@@ -523,6 +525,9 @@ formatParts(){
       elif [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
         echo "Make btrfs on root $FMTROOTPART"
         runCommand mkfs.btrfs -L ARCH_ROOT -f -f $FMTROOTPART
+      elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
+        echo "Make btrfs on root $FMTROOTPART"
+        runCommand mkfs.f2fs -O extra_attr,inode_checksum,sb_checksum,compression -l ARCH_ROOT -f -f $FMTROOTPART
       fi
     fi
   else
@@ -575,6 +580,9 @@ mountParts(){
     runCommand mount -o compress=zstd,subvol=@snapshots $FMTROOTPART .snapshots
   elif [[ "${USERVARIABLES[ROOTFILE]}" = "EXT4" ]]; then
     echo "Mount root partition... (EXT4)"
+    runCommand mount $FMTROOTPART /mnt
+  elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
+    echo "Mount root partition... (F2FS)"
     runCommand mount $FMTROOTPART /mnt
   fi
 

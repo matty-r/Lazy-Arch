@@ -71,6 +71,10 @@ grubPackages-Config(){
   fi
 }
 
+f2fsPackages-Config(){
+  yay -S f2fs-tools
+}
+
 btrfsPackages-Config(){
   if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
