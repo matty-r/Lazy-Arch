@@ -63,11 +63,11 @@ GPUBUNDLE=""
 INSTALLSTAGE=""
 
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/f2fs-experimental/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/f2fs-experimental/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
