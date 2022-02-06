@@ -264,12 +264,14 @@ driver(){
 
 firstInstallStage(){
   echo "0. Set passwords"
-  ROOTPWD=""
-  read -sp 'ROOT Password: ' ROOTPWD
-  echo
-  USERPWD=""
-  read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
-  echo
+  if [[ $DRYRUN -ne 1 ]]; then
+    ROOTPWD=""
+    read -sp 'ROOT Password: ' ROOTPWD
+    echo
+    USERPWD=""
+    read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
+    echo
+  fi
 
   echo "1. Generate Settings"
   generateSettings
@@ -663,9 +665,18 @@ genLocales(){
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
   COUNTRYINFO=$(curl -sX GET "https://raw.githubusercontent.com/annexare/Countries/master/data/countries.json" | tr -d '\n' | tr -d ' ')
   LANGUAGES=$(echo $COUNTRYINFO | grep -Po '(?<="'$COUNTRYCODE'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
-  #LANGUAGE=$(curl -sX GET "https://restcountries.eu/rest/v2/alpha/au" | grep -Po '(?<="iso639_1":").*?(?=")')
-  LANGUAGE=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
-  LANGCODE="${LANGUAGE}_${COUNTRYCODE}.UTF-8"
+  #LANGUAGES=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
+  readarray -t LANGARRAY < <(echo $LANGUAGES | grep -oP '(?<=").*?(?=")')
+  declare -p LANGARRAY
+  for LANGUAGE in "${LANGARRAY[@]}"
+  do
+    LANGCODE="${LANGUAGE}_${COUNTRYCODE}.UTF-8"
+    if grep -q "${LANGCODE}" /etc/locale.gen; then
+        echo "found - ${LANGCODE}"
+        break
+    fi
+  done
+    
   echo "LANGUAGE CODE will be set to $LANGCODE"
 
   runCommand sed -i "s/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
@@ -699,7 +710,9 @@ addHosts(){
 ### GENERATE INITRAMFS
 genInit(){
   if [[ "${USERVARIABLES[ENCRYPT]}" = "YES" ]]; then
-    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
+    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck shutdown)/" /etc/mkinitcpio.conf
+  else 
+    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block filesystems keyboard fsck shutdown)/" /etc/mkinitcpio.conf
   fi
   runCommand mkinitcpio -P
 }
