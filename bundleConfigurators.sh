@@ -71,6 +71,10 @@ grubPackages-Config(){
   fi
 }
 
+f2fsPackages-Config(){
+  yay -S f2fs-tools
+}
+
 btrfsPackages-Config(){
   if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
@@ -124,7 +128,7 @@ kdePackages-Config(){
   sudo mkdir /etc/sddm.conf.d
 
   ## disable bitmap fonts
-  mkdir ~/.config/fontconfig/conf.d/
+  mkdir -p ~/.config/fontconfig/conf.d/
 echo '<?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
 <fontconfig>

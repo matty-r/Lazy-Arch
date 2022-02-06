@@ -46,7 +46,7 @@ USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
-USERVARIABLES[ROOTFILE]="BTRFS" ## EXT4 or BTRFS
+USERVARIABLES[ROOTFILE]="F2FS" ## EXT4 or BTRFS or F2FS
 USERVARIABLES[ENCRYPT]="NO" ## YES or NO
 USERVARIABLES[ROOTMODE]="CREATE"
 
@@ -63,11 +63,11 @@ GPUBUNDLE=""
 INSTALLSTAGE=""
 
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/f2fs-experimental/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/f2fs-experimental/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
@@ -264,12 +264,14 @@ driver(){
 
 firstInstallStage(){
   echo "0. Set passwords"
-  ROOTPWD=""
-  read -sp 'ROOT Password: ' ROOTPWD
-  echo
-  USERPWD=""
-  read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
-  echo
+  if [[ $DRYRUN -ne 1 ]]; then
+    ROOTPWD=""
+    read -sp 'ROOT Password: ' ROOTPWD
+    echo
+    USERPWD=""
+    read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
+    echo
+  fi
 
   echo "1. Generate Settings"
   generateSettings
@@ -319,9 +321,6 @@ secondInstallStage(){
   echo "10. chroot: Import Settings"
   importSettings
 
-  #echo "Re-apply local mirrors"
-  #setLocalMirrors
-
   echo "11. chroot: Set root password"
   rootPassword
 
@@ -360,9 +359,11 @@ thirdInstallStage(){
   echo "22. chroot: Install selected bundles"
   runCommand installSoftwareBundles "${USERVARIABLES[BUNDLES]}"
 
-  echo "23. chroot; Run the btrfsPackages-config"
+  echo "23. chroot: Run the file system packages "
   if [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
     runCommand btrfsPackages-Config
+  elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
+    runCommand f2fsPackages-Config
   fi
 
   echo "24. Readying final boot"
@@ -523,6 +524,9 @@ formatParts(){
       elif [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
         echo "Make btrfs on root $FMTROOTPART"
         runCommand mkfs.btrfs -L ARCH_ROOT -f -f $FMTROOTPART
+      elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
+        echo "Make btrfs on root $FMTROOTPART"
+        runCommand mkfs.f2fs -O extra_attr,inode_checksum,sb_checksum,compression -l ARCH_ROOT -f -f $FMTROOTPART
       fi
     fi
   else
@@ -575,6 +579,9 @@ mountParts(){
     runCommand mount -o compress=zstd,subvol=@snapshots $FMTROOTPART .snapshots
   elif [[ "${USERVARIABLES[ROOTFILE]}" = "EXT4" ]]; then
     echo "Mount root partition... (EXT4)"
+    runCommand mount $FMTROOTPART /mnt
+  elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
+    echo "Mount root partition... (F2FS)"
     runCommand mount $FMTROOTPART /mnt
   fi
 
@@ -655,9 +662,18 @@ genLocales(){
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
   COUNTRYINFO=$(curl -sX GET "https://raw.githubusercontent.com/annexare/Countries/master/data/countries.json" | tr -d '\n' | tr -d ' ')
   LANGUAGES=$(echo $COUNTRYINFO | grep -Po '(?<="'$COUNTRYCODE'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
-  #LANGUAGE=$(curl -sX GET "https://restcountries.eu/rest/v2/alpha/au" | grep -Po '(?<="iso639_1":").*?(?=")')
-  LANGUAGE=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
-  LANGCODE="${LANGUAGE}_${COUNTRYCODE}.UTF-8"
+  #LANGUAGES=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
+  readarray -t LANGARRAY < <(echo $LANGUAGES | grep -oP '(?<=").*?(?=")')
+  declare -p LANGARRAY
+  for LANGUAGE in "${LANGARRAY[@]}"
+  do
+    LANGCODE="${LANGUAGE}_${COUNTRYCODE}.UTF-8"
+    if grep -q "${LANGCODE}" /etc/locale.gen; then
+        echo "found - ${LANGCODE}"
+        break
+    fi
+  done
+    
   echo "LANGUAGE CODE will be set to $LANGCODE"
 
   runCommand sed -i "s/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
@@ -691,7 +707,9 @@ addHosts(){
 ### GENERATE INITRAMFS
 genInit(){
   if [[ "${USERVARIABLES[ENCRYPT]}" = "YES" ]]; then
-    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)/" /etc/mkinitcpio.conf
+    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck shutdown)/" /etc/mkinitcpio.conf
+  else 
+    runCommand sudo sed -i "s/^HOOKS=(base udev autodetect modconf block filesystems keyboard fsck).*/HOOKS=(base udev autodetect modconf block filesystems keyboard fsck shutdown)/" /etc/mkinitcpio.conf
   fi
   runCommand mkinitcpio -P
 }
@@ -738,9 +756,9 @@ createUser(){
   
   
   ###### enable wheel group for sudoers
-  runCommand sed -i "s/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/" /etc/sudoers
+  runCommand sed -i "s/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/" /etc/sudoers
   ###### enable wheel group for sudoers - no password. TEMPORARY
-  runCommand sed -i "s/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
+  runCommand sed -i "s/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/" /etc/sudoers
   if [[ $DRYRUN -eq 1 ]]; then
     echo "Write THIRD to /home/${USERVARIABLES[USERNAME]}/stage.cfg"
   else
@@ -761,8 +779,8 @@ enableMultilibPackages(){
 ###### make yay
 makeYay(){
   if [[ $(pacman -Ss "yay-bin") ]]; then
-          echo "yay-bin found custom repo.. install direct"
-          runCommand sudo pacman -S yay-bin --noconfirm
+    echo "yay-bin found custom repo.. install direct"
+    runCommand sudo pacman -S yay-bin --noconfirm
   else
     runCommand cd /home/"${USERVARIABLES[USERNAME]}"
     runCommand git clone https://aur.archlinux.org/yay-bin.git
