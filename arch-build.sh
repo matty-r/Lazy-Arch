@@ -321,9 +321,6 @@ secondInstallStage(){
   echo "10. chroot: Import Settings"
   importSettings
 
-  #echo "Re-apply local mirrors"
-  #setLocalMirrors
-
   echo "11. chroot: Set root password"
   rootPassword
 
@@ -362,7 +359,7 @@ thirdInstallStage(){
   echo "22. chroot: Install selected bundles"
   runCommand installSoftwareBundles "${USERVARIABLES[BUNDLES]}"
 
-  echo "23. chroot; Run the file system packages "
+  echo "23. chroot: Run the file system packages "
   if [[ "${USERVARIABLES[ROOTFILE]}" = "BTRFS" ]]; then
     runCommand btrfsPackages-Config
   elif [[ "${USERVARIABLES[ROOTFILE]}" = "F2FS" ]]; then
@@ -759,9 +756,9 @@ createUser(){
   
   
   ###### enable wheel group for sudoers
-  runCommand sed -i "s/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/" /etc/sudoers
+  runCommand sed -i "s/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/" /etc/sudoers
   ###### enable wheel group for sudoers - no password. TEMPORARY
-  runCommand sed -i "s/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
+  runCommand sed -i "s/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/" /etc/sudoers
   if [[ $DRYRUN -eq 1 ]]; then
     echo "Write THIRD to /home/${USERVARIABLES[USERNAME]}/stage.cfg"
   else
@@ -782,8 +779,8 @@ enableMultilibPackages(){
 ###### make yay
 makeYay(){
   if [[ $(pacman -Ss "yay-bin") ]]; then
-          echo "yay-bin found custom repo.. install direct"
-          runCommand sudo pacman -S yay-bin --noconfirm
+    echo "yay-bin found custom repo.. install direct"
+    runCommand sudo pacman -S yay-bin --noconfirm
   else
     runCommand cd /home/"${USERVARIABLES[USERNAME]}"
     runCommand git clone https://aur.archlinux.org/yay-bin.git
