@@ -46,7 +46,7 @@ USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel
 USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
 USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
 USERVARIABLES[ROOTPART]="/dev/vda2"
-USERVARIABLES[ROOTFILE]="F2FS" ## EXT4 or BTRFS or F2FS
+USERVARIABLES[ROOTFILE]="EXT4" ## EXT4 or BTRFS or F2FS
 USERVARIABLES[ENCRYPT]="NO" ## YES or NO
 USERVARIABLES[ROOTMODE]="CREATE"
 
@@ -63,11 +63,11 @@ GPUBUNDLE=""
 INSTALLSTAGE=""
 
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/f2fs-experimental/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/f2fs-experimental/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
