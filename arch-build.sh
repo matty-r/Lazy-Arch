@@ -1,7 +1,7 @@
 #!/bin/bash
 # Version 2.8
 # Arch Linux INSTALL SCRIPT
-GITBRANCH="master"
+GITBRANCH="restructure"
 #Exit on error
 #set -e
 # Check what params this has been launched with.
