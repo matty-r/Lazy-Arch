@@ -1,7 +1,10 @@
 #!/bin/bash
 # Version 2.8
 # Arch Linux INSTALL SCRIPT
+
+GITURL="https://raw.githubusercontent.com/matty-r/lazy-arch/"
 GITBRANCH="restructure"
+
 #Exit on error
 #set -e
 # Check what params this has been launched with.
@@ -64,11 +67,11 @@ INSTALLSTAGE=""
 
 
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/"$GITBRANCH"/bundleConfigurators.sh
+  curl -LO "$GITURL""$GITBRANCH"/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/"$GITBRANCH"/softwareBundles.sh
+  curl -LO "$GITURL""$GITBRANCH"/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
@@ -77,7 +80,7 @@ if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBun
 fi
 
 if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/"$GITBRANCH"/settings.conf
+  curl -LO "$GITURL""$GITBRANCH"/settings.conf
   echo "$(tput setaf 0)$(tput setab 3) **First run? Be sure to change the settings.conf file before continuing.** $(tput sgr0)"
   exit 1
 fi
@@ -121,50 +124,57 @@ getDevice(){
 
 importSettings(){
   echo "Importing Settings.."
-  
-  SCRIPTPATH=$(retrieveSettings 'SCRIPTPATH')
-  SCRIPTROOT=$(retrieveSettings 'SCRIPTROOT')
-  BOOTDEVICE=$(retrieveSettings 'BOOTDEVICE')
-  ROOTDEVICE=$(retrieveSettings 'ROOTDEVICE')
-  EFIPATH=$(retrieveSettings 'EFIPATH')
-  BOOTTYPE=$(retrieveSettings 'BOOTTYPE')
-  NETINT=$(retrieveSettings 'NETINT')
-  CPUTYPE=$(retrieveSettings 'CPUTYPE')
-  GPUBUNDLE=$(retrieveSettings 'GPUBUNDLE')
-  INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
-  
-  USERVARIABLES[BUNDLES]=$(retrieveSettings 'BUNDLES')
-  USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
-  USERVARIABLES[HOSTNAME]=$(retrieveSettings 'HOSTNAME')
-  USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
-  USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
-  USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
-  USERVARIABLES[ROOTFILE]=$(retrieveSettings 'ROOTFILE')
-  USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
-  USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
-  USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
 
-  echo "Imported SCRIPTPATH=${SCRIPTPATH}"
-  echo "Imported SCRIPTROOT=${SCRIPTROOT}"
-  echo "Imported BOOTDEVICE=${BOOTDEVICE}"
-  echo "Imported ROOTDEVICE=${ROOTDEVICE}"
-  echo "Imported ROOTFILE=${ROOTFILE}"
-  echo "Imported ENCRYPT=${ENCRYPT}"
-  echo "Imported EFIPATH=${EFIPATH}"
-  echo "Imported BOOTTYPE=${BOOTTYPE}"
-  echo "Imported NETINT=${NETINT}"
-  echo "Imported CPUTYPE=${CPUTYPE}"
-  echo "Imported GPUBUNDLE=${GPUBUNDLE}"
-  echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
+  IMPORTTYPE=$1
 
-  echo "Imported USERNAME=${USERVARIABLES[USERNAME]}"
-  echo "Imported HOSTNAME=${USERVARIABLES[HOSTNAME]}"
-  echo "Imported BUNDLES=${USERVARIABLES[BUNDLES]}"
-  echo "Imported DESKTOP=${USERVARIABLES[DESKTOP]}"
-  echo "Imported BOOTPART=${USERVARIABLES[BOOTPART]}"
-  echo "Imported ROOTPART=${USERVARIABLES[ROOTPART]}"
-  echo "Imported ROOTMODE=${USERVARIABLES[ROOTMODE]}"
-  echo "Imported BOOTMODE=${USERVARIABLES[BOOTMODE]}"
+  
+  if [[ $IMPORTTYPE == "all" ]] || [[ $IMPORTTYPE == "script" ]]; then
+    SCRIPTPATH=$(retrieveSettings 'SCRIPTPATH')
+    SCRIPTROOT=$(retrieveSettings 'SCRIPTROOT')
+    BOOTDEVICE=$(retrieveSettings 'BOOTDEVICE')
+    ROOTDEVICE=$(retrieveSettings 'ROOTDEVICE')
+    EFIPATH=$(retrieveSettings 'EFIPATH')
+    BOOTTYPE=$(retrieveSettings 'BOOTTYPE')
+    NETINT=$(retrieveSettings 'NETINT')
+    CPUTYPE=$(retrieveSettings 'CPUTYPE')
+    GPUBUNDLE=$(retrieveSettings 'GPUBUNDLE')
+    INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
+
+    echo "Imported SCRIPTPATH=${SCRIPTPATH}"
+    echo "Imported SCRIPTROOT=${SCRIPTROOT}"
+    echo "Imported BOOTDEVICE=${BOOTDEVICE}"
+    echo "Imported ROOTDEVICE=${ROOTDEVICE}"
+    echo "Imported ROOTFILE=${ROOTFILE}"
+    echo "Imported ENCRYPT=${ENCRYPT}"
+    echo "Imported EFIPATH=${EFIPATH}"
+    echo "Imported BOOTTYPE=${BOOTTYPE}"
+    echo "Imported NETINT=${NETINT}"
+    echo "Imported CPUTYPE=${CPUTYPE}"
+    echo "Imported GPUBUNDLE=${GPUBUNDLE}"
+    echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
+  fi
+  
+  if [[ $IMPORTTYPE == "all" ]] || [[ $IMPORTTYPE == "user" ]]; then
+    USERVARIABLES[BUNDLES]=$(retrieveSettings 'BUNDLES')
+    USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+    USERVARIABLES[HOSTNAME]=$(retrieveSettings 'HOSTNAME')
+    USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
+    USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
+    USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
+    USERVARIABLES[ROOTFILE]=$(retrieveSettings 'ROOTFILE')
+    USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
+    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+    USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
+
+    echo "Imported USERNAME=${USERVARIABLES[USERNAME]}"
+    echo "Imported HOSTNAME=${USERVARIABLES[HOSTNAME]}"
+    echo "Imported BUNDLES=${USERVARIABLES[BUNDLES]}"
+    echo "Imported DESKTOP=${USERVARIABLES[DESKTOP]}"
+    echo "Imported BOOTPART=${USERVARIABLES[BOOTPART]}"
+    echo "Imported ROOTPART=${USERVARIABLES[ROOTPART]}"
+    echo "Imported ROOTMODE=${USERVARIABLES[ROOTMODE]}"
+    echo "Imported BOOTMODE=${USERVARIABLES[BOOTMODE]}"
+  fi  
 }
 
 #Export out the settings used/selected to settings.conf
@@ -287,7 +297,8 @@ generateSettings(){
 }
 
 driver(){
-  importSettings
+  importSettings "user"
+
   if [[ $PROMPT -eq 1 ]]; then
     promptSettings
   fi
@@ -375,7 +386,7 @@ firstInstallStage(){
 
 secondInstallStage(){
   echo "10. chroot: Import Settings"
-  importSettings
+  importSettings "all"
 
   echo "11. chroot: Set root password"
   rootPassword
@@ -404,7 +415,7 @@ secondInstallStage(){
 
 
 thirdInstallStage(){
-  importSettings
+  importSettings "all"
 
   echo "20. chroot: Install yay - AUR package manager"
   makeYay
