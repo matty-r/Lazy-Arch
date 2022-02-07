@@ -1,7 +1,7 @@
 #!/bin/bash
-# Version 2.7
+# Version 2.8
 # Arch Linux INSTALL SCRIPT
-
+GITBRANCH="master"
 #Exit on error
 #set -e
 # Check what params this has been launched with.
@@ -36,19 +36,19 @@ do
   shift
 done
 
-# User Variables. Change these if Unattended install
+# User Variables array
 declare -A USERVARIABLES
-USERVARIABLES[USERNAME]="username"
-USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="kdeTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
-USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
-USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
-USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
-USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
-USERVARIABLES[ROOTPART]="/dev/vda2"
-USERVARIABLES[ROOTFILE]="EXT4" ## EXT4 or BTRFS or F2FS
-USERVARIABLES[ENCRYPT]="NO" ## YES or NO
-USERVARIABLES[ROOTMODE]="CREATE"
+# USERVARIABLES[USERNAME]="username"
+# USERVARIABLES[HOSTNAME]="computer-name"
+# USERVARIABLES[BUNDLES]="kdeTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
+# USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+# USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
+# USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
+# USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
+# USERVARIABLES[ROOTPART]="/dev/vda2"
+# USERVARIABLES[ROOTFILE]="EXT4" ## EXT4 or BTRFS or F2FS
+# USERVARIABLES[ENCRYPT]="NO" ## YES or NO
+# USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
 SCRIPTPATH=$( readlink -m $( type -p $0 ))
@@ -62,17 +62,27 @@ CPUTYPE=""
 GPUBUNDLE=""
 INSTALLSTAGE=""
 
+
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/bundleConfigurators.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/"$GITBRANCH"/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/softwareBundles.sh
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/"$GITBRANCH"/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
     echo "$(tput setaf 7)$(tput setab 1) **Check internet access. Unable to download required files.** $(tput sgr0)"
     exit 1
+fi
+
+if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
+  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/"$GITBRANCH"/settings.conf
+  echo "$(tput setaf 0)$(tput setab 3) **First run? Be sure to change the settings.conf file before continuing.** $(tput sgr0)"
+  exit 1
+else 
+  echo "Importing from settings.conf"
+  importSettings
 fi
 
 #Available Software Bundles
@@ -112,10 +122,10 @@ getDevice(){
   done
 }
 
-#Export out the settings used/selected to installsettings.cfg
+#Export out the settings used/selected to settings.conf
 generateSettings(){
-  # create settings file
-  echo "" > "$SCRIPTROOT/installsettings.cfg"
+  # create settings file if it doesn't already exist
+  echo "" > "$SCRIPTROOT/settings.conf"
 
   exportSettings "USERNAME" "${USERVARIABLES[USERNAME]}"
   exportSettings "HOSTNAME" "${USERVARIABLES[HOSTNAME]}"
@@ -378,9 +388,9 @@ exportSettings(){
   ## write all settings to a file on new root
 
   ## delete any previously matching settings
-  sed -i "s/^$1=.*//" "$SCRIPTROOT/installsettings.cfg"
+  sed -i "s/^$1=.*//" "$SCRIPTROOT/settings.conf"
 
-  echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
+  echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/settings.conf"
 }
 
 importSettings(){
@@ -434,9 +444,9 @@ importSettings(){
 #retrieveSettings 'SETTINGNAME'
 retrieveSettings(){
   if [[ $DRYRUN -eq 1 ]]; then
-    SETTINGSPATH="./installsettings.cfg"
+    SETTINGSPATH="./settings.conf"
   else
-    SETTINGSPATH="$SCRIPTROOT/installsettings.cfg"
+    SETTINGSPATH="$SCRIPTROOT/settings.conf"
   fi 
 
   SETTINGNAME=$1
@@ -641,7 +651,7 @@ chrootTime(){
   runCommand cp "$SCRIPTPATH" /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp "$SCRIPTROOT"/softwareBundles.sh /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp "$SCRIPTROOT"/bundleConfigurators.sh /mnt/home/"${USERVARIABLES[USERNAME]}"
-  runCommand cp "$SCRIPTROOT"/installsettings.cfg /mnt/home/"${USERVARIABLES[USERNAME]}"
+  runCommand cp "$SCRIPTROOT"/settings.conf /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp /etc/pacman.conf /mnt/etc/
   runCommand cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/
 }
