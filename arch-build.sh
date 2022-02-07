@@ -85,12 +85,6 @@ if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
   exit 1
 fi
 
-#Available Software Bundles
-# shellcheck source=softwareBundles.sh
-source "$SCRIPTROOT/softwareBundles.sh"
-#Addtional configurations needed for selected bundles
-# shellcheck source=bundleConfigurators.sh
-source "$SCRIPTROOT/bundleConfigurators.sh"
 
 #Prompt User for settings
 promptSettings(){
@@ -139,19 +133,6 @@ importSettings(){
     CPUTYPE=$(retrieveSettings 'CPUTYPE')
     GPUBUNDLE=$(retrieveSettings 'GPUBUNDLE')
     INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
-
-    echo "Imported SCRIPTPATH=${SCRIPTPATH}"
-    echo "Imported SCRIPTROOT=${SCRIPTROOT}"
-    echo "Imported BOOTDEVICE=${BOOTDEVICE}"
-    echo "Imported ROOTDEVICE=${ROOTDEVICE}"
-    echo "Imported ROOTFILE=${ROOTFILE}"
-    echo "Imported ENCRYPT=${ENCRYPT}"
-    echo "Imported EFIPATH=${EFIPATH}"
-    echo "Imported BOOTTYPE=${BOOTTYPE}"
-    echo "Imported NETINT=${NETINT}"
-    echo "Imported CPUTYPE=${CPUTYPE}"
-    echo "Imported GPUBUNDLE=${GPUBUNDLE}"
-    echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
   fi
   
   if [[ $IMPORTTYPE == "all" ]] || [[ $IMPORTTYPE == "user" ]]; then
@@ -159,21 +140,13 @@ importSettings(){
     USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
     USERVARIABLES[HOSTNAME]=$(retrieveSettings 'HOSTNAME')
     USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
+    USERVARIABLES[KERNEL]=$(retrieveSettings 'KERNEL')
     USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
     USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
     USERVARIABLES[ROOTFILE]=$(retrieveSettings 'ROOTFILE')
     USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
     USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
     USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
-
-    echo "Imported USERNAME=${USERVARIABLES[USERNAME]}"
-    echo "Imported HOSTNAME=${USERVARIABLES[HOSTNAME]}"
-    echo "Imported BUNDLES=${USERVARIABLES[BUNDLES]}"
-    echo "Imported DESKTOP=${USERVARIABLES[DESKTOP]}"
-    echo "Imported BOOTPART=${USERVARIABLES[BOOTPART]}"
-    echo "Imported ROOTPART=${USERVARIABLES[ROOTPART]}"
-    echo "Imported ROOTMODE=${USERVARIABLES[ROOTMODE]}"
-    echo "Imported BOOTMODE=${USERVARIABLES[BOOTMODE]}"
   fi  
 }
 
@@ -298,6 +271,13 @@ generateSettings(){
 
 driver(){
   importSettings "user"
+  
+  #Available Software Bundles
+  # shellcheck source=softwareBundles.sh
+  source "$SCRIPTROOT/softwareBundles.sh"
+  #Addtional configurations needed for selected bundles
+  # shellcheck source=bundleConfigurators.sh
+  source "$SCRIPTROOT/bundleConfigurators.sh"\
 
   if [[ $PROMPT -eq 1 ]]; then
     promptSettings
@@ -333,11 +313,15 @@ firstInstallStage(){
   echo "0. Set passwords"
   if [[ $DRYRUN -ne 1 ]]; then
     ROOTPWD=""
-    read -sp 'ROOT Password: ' ROOTPWD
+    read -spr 'ROOT Password: ' ROOTPWD
     echo
     USERPWD=""
-    read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
+    read -spr "${USERVARIABLES[USERNAME]} Password: " USERPWD
     echo
+    if [[ $ROOTPWD == "" ]] || [[ $USERPWD == "" ]]; then
+      echo "$(tput setaf 7)$(tput setab 1) **Passwords are required. Exiting..** $(tput sgr0)"
+      exit 1
+    fi
   fi
 
   echo "1. Generate Settings"
@@ -459,7 +443,8 @@ retrieveSettings(){
   fi 
 
   SETTINGNAME=$1
-  SETTING=$(grep "$SETTINGNAME" "$SETTINGSPATH" | cut -f2,2 -d'=')
+  SETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
+  echo "Imported ${SETTINGNAME}=${SETTING}"
   echo "$SETTING"
 }
 
