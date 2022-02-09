@@ -23,12 +23,10 @@ do
     ;;
     --rootpwd)
         ROOTPWD="$2"
-        echo $ROOTPWD
         shift
     ;;
     --userpwd)
         USERPWD="$2"
-        echo $USERPWD
         shift
     ;;
     *)
