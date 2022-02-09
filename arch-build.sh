@@ -151,8 +151,6 @@ importSettings(){
 
 #Export out the settings used/selected to settings.conf
 generateSettings(){
-  # create settings file if it doesn't already exist
-  echo "" > "$SCRIPTROOT/settings.conf"
 
   exportSettings "USERNAME" "${USERVARIABLES[USERNAME]}"
   exportSettings "HOSTNAME" "${USERVARIABLES[HOSTNAME]}"
@@ -312,10 +310,10 @@ firstInstallStage(){
   echo "0. Set passwords"
   if [[ $DRYRUN -ne 1 ]]; then
     ROOTPWD=""
-    read -spr 'ROOT Password: ' ROOTPWD
+    read -sp 'ROOT Password: ' ROOTPWD
     echo
     USERPWD=""
-    read -spr "${USERVARIABLES[USERNAME]} Password: " USERPWD
+    read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
     echo
     if [[ $ROOTPWD == "" ]] || [[ $USERPWD == "" ]]; then
       echo "$(tput setaf 7)$(tput setab 1) **Passwords are required. Exiting..** $(tput sgr0)"
@@ -423,14 +421,20 @@ thirdInstallStage(){
 
 
 exportSettings(){
+  SETTINGNAME=$1
+  SETTING=$2
   echo "Exporting $1=$2" 1>&2
-  EXPORTPARAM="$1=$2"
-  ## write all settings to a file on new root
+  EXPORTPARAM="${SETTINGNAME}=${SETTING}"
 
-  ## delete any previously matching settings
-  sed -i "s/^$1=.*//" "$SCRIPTROOT/settings.conf"
+  CURRENTSETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
+  if [[ "${CURRENTSETTING}" == "" ]]; then
+    echo "${EXPORTPARAM}" | tee -a "$SCRIPTROOT/settings.conf" > /dev/null
+  else 
+    ## delete any previously matching settings
+    sed -i "s/^${SETTINGNAME}=.*/${EXPORTPARAM}/" "$SCRIPTROOT/settings.conf"
+  fi
 
-  echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/settings.conf"
+  ## echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/settings.conf"
 }
 
 #retrieveSettings 'SETTINGNAME'
