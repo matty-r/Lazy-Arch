@@ -117,11 +117,10 @@ getDevice(){
 }
 
 importSettings(){
-  echo "Importing Settings.."
-
   IMPORTTYPE=$1
+  echo "Importing ${IMPORTTYPE} Settings.."
+ 
 
-  
   if [[ $IMPORTTYPE == "all" ]] || [[ $IMPORTTYPE == "script" ]]; then
     SCRIPTPATH=$(retrieveSettings 'SCRIPTPATH')
     SCRIPTROOT=$(retrieveSettings 'SCRIPTROOT')
@@ -441,8 +440,10 @@ retrieveSettings(){
   else
     SETTINGSPATH="$SCRIPTROOT/settings.conf"
   fi 
-
+  
   SETTINGNAME=$1
+  echo "Importing setting - ${SETTINGNAME} from path - ${SETTINGSPATH}"
+
   SETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
   echo "Imported ${SETTINGNAME}=${SETTING}"
   echo "$SETTING"
