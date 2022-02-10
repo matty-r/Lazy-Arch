@@ -443,10 +443,8 @@ retrieveSettings(){
   fi 
   
   SETTINGNAME=$1
-  # printf "Importing setting - ${SETTINGNAME} from path - ${SETTINGSPATH}"
 
   SETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
-  # printf "Imported ${SETTINGNAME}=${SETTING}"
   echo "$SETTING"
 }
 

@@ -18,7 +18,7 @@ done
 
 nvidiaPackages-Config(){
   if [[  ${USERVARIABLES[KERNEL]} = "" ]]; then
-    USERVARIABLES[KERNEL]=$(retrieveSettings 'KERNEL')
+    USERVARIABLES[KERNEL]=$(retrieveBundleSettings 'KERNEL')
   fi
 
   case ${USERVARIABLES[KERNEL]} in
@@ -46,7 +46,7 @@ nvidiaPrimePackages-Config(){
 
 dockerPackages-Config(){
   if [[  ${USERVARIABLES[USERNAME]} = "" ]]; then
-    USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+    USERVARIABLES[USERNAME]=$(retrieveBundleSettings 'USERNAME')
   fi
 
   sudo systemctl enable docker
@@ -55,11 +55,11 @@ dockerPackages-Config(){
 
 grubPackages-Config(){
   if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
-    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+    USERVARIABLES[ROOTPART]=$(retrieveBundleSettings 'ROOTPART')
   fi
 
   if [[ "${USERVARIABLES[ENCRYPT]}" == "" ]]; then
-      USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
+      USERVARIABLES[ENCRYPT]=$(retrieveBundleSettings 'ENCRYPT')
   fi
 
   if [[ "${USERVARIABLES[ENCRYPT]}" == "YES" ]]; then
@@ -77,7 +77,7 @@ f2fsPackages-Config(){
 
 btrfsPackages-Config(){
   if [[ "${USERVARIABLES[ROOTPART]}" == "" ]]; then
-    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+    USERVARIABLES[ROOTPART]=$(retrieveBundleSettings 'ROOTPART')
   fi
 
   yay -S --noconfirm snapper grub-btrfs snap-pac
@@ -120,7 +120,7 @@ qemuGuestPackages-Config(){
 
 kdePackages-Config(){
   if [[ "${USERVARIABLES[USERNAME]}" == "" ]]; then
-    USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+    USERVARIABLES[USERNAME]=$(retrieveBundleSettings 'USERNAME')
   fi
 
   #enable SDDM and set autologin, also set theme to breeze
@@ -333,7 +333,7 @@ rdpPackages-Config(){
   SESHNAME=""
 
   if [[ ${USERVARIABLES[DESKTOP]} == "" ]]; then
-    USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
+    USERVARIABLES[DESKTOP]=$(retrieveBundleSettings 'DESKTOP')
   fi
 
   sudo systemctl enable xrdp xrdp-sesman
@@ -359,13 +359,13 @@ rdpPackages-Config(){
   sudo sed -i "s/use_vsock=true/use_vsock=false/" /etc/xrdp/xrdp.ini
 }
 
-#retrieveSettings 'SETTINGNAME'
-retrieveSettings(){
+#retrieveBundleSettings 'SETTINGNAME'
+retrieveBundleSettings(){
   # Script Variables. DO NOT CHANGE THESE
   BUNDLECONFIGPATH=$( readlink -m "$( type -p "$0" )")
   BUNDLECONFIGROOT=${BUNDLECONFIGPATH%/*}
 
-  SETTINGSPATH="$BUNDLECONFIGROOT/installsettings.cfg" 
+  SETTINGSPATH="$BUNDLECONFIGROOT/settings.conf" 
 
   if [ ! -f "$SETTINGSPATH" ]; then
     echo 'Unable to import required settings. Exiting.'
@@ -373,7 +373,7 @@ retrieveSettings(){
   fi
 
   SETTINGNAME=$1
-  SETTING=$(grep "$SETTINGNAME" "$SETTINGSPATH" | cut -f2,2 -d'=')
+  SETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
   echo "$SETTING"
 }
 
