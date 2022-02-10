@@ -52,7 +52,7 @@ declare -A USERVARIABLES
 # USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
-SCRIPTPATH=$( readlink -m $( type -p $0 ))
+SCRIPTPATH=$(readlink -m "$( type -p "$0" )")
 SCRIPTROOT=${SCRIPTPATH%/*}
 BOOTDEVICE=""
 ROOTDEVICE=""
@@ -272,7 +272,7 @@ driver(){
   source "$SCRIPTROOT/softwareBundles.sh"
   #Addtional configurations needed for selected bundles
   # shellcheck source=bundleConfigurators.sh
-  source "$SCRIPTROOT/bundleConfigurators.sh"\
+  source "$SCRIPTROOT/bundleConfigurators.sh"
 
   if [[ $PROMPT -eq 1 ]]; then
     promptSettings
@@ -421,18 +421,17 @@ thirdInstallStage(){
 exportSettings(){
   SETTINGNAME=$1
   SETTING=$2
-  echo "Exporting $1=$2" 1>&2
+  # echo "Exporting $1=$2" 1>&2
   EXPORTPARAM="${SETTINGNAME}=${SETTING}"
 
-  CURRENTSETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
+  CURRENTSETTING=$(grep "^${SETTINGNAME}=" "$SCRIPTROOT/settings.conf" | cut -f2,2 -d'=')
   if [[ "${CURRENTSETTING}" == "" ]]; then
     echo "${EXPORTPARAM}" | tee -a "$SCRIPTROOT/settings.conf" > /dev/null
   else 
     ## delete any previously matching settings
-    sed -i "s/^${SETTINGNAME}=.*/${EXPORTPARAM}/" "$SCRIPTROOT/settings.conf"
+    sed -i "s%^${SETTINGNAME}=.*%${EXPORTPARAM}%" "$SCRIPTROOT/settings.conf"
   fi
 
-  ## echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/settings.conf"
 }
 
 #retrieveSettings 'SETTINGNAME'
@@ -444,10 +443,10 @@ retrieveSettings(){
   fi 
   
   SETTINGNAME=$1
-  echo "Importing setting - ${SETTINGNAME} from path - ${SETTINGSPATH}"
+  # printf "Importing setting - ${SETTINGNAME} from path - ${SETTINGSPATH}"
 
   SETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
-  echo "Imported ${SETTINGNAME}=${SETTING}"
+  # printf "Imported ${SETTINGNAME}=${SETTING}"
   echo "$SETTING"
 }
 
@@ -596,9 +595,9 @@ mountParts(){
   if [[ "$BOOTTYPE" = "EFI" ]]; then
 
     runCommand mkdir /mnt/boot
-    runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
+    runCommand mount "${USERVARIABLES[BOOTPART]}" /mnt/boot
   else
-    runCommand mount ${USERVARIABLES[ROOTPART]} /mnt
+    runCommand mount "${USERVARIABLES[ROOTPART]}" /mnt
   fi
 }
 
@@ -668,9 +667,9 @@ genLocales(){
   GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
   COUNTRYINFO=$(curl -sX GET "https://raw.githubusercontent.com/annexare/Countries/master/data/countries.json" | tr -d '\n' | tr -d ' ')
-  LANGUAGES=$(echo $COUNTRYINFO | grep -Po '(?<="'$COUNTRYCODE'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
+  LANGUAGES=$(echo "$COUNTRYINFO" | grep -Po '(?<="'"$COUNTRYCODE"'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
   #LANGUAGES=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
-  readarray -t LANGARRAY < <(echo $LANGUAGES | grep -oP '(?<=").*?(?=")')
+  readarray -t LANGARRAY < <(echo "$LANGUAGES" | grep -oP '(?<=").*?(?=")')
   declare -p LANGARRAY
   for LANGUAGE in "${LANGARRAY[@]}"
   do
