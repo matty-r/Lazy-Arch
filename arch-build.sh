@@ -1,6 +1,9 @@
 #!/bin/bash
-# Version 2.7
+# Version 2.9
 # Arch Linux INSTALL SCRIPT
+
+GITURL="https://raw.githubusercontent.com/matty-r/lazy-arch/"
+GITBRANCH="restructure"
 
 #Exit on error
 #set -e
@@ -20,12 +23,10 @@ do
     ;;
     --rootpwd)
         ROOTPWD="$2"
-        echo $ROOTPWD
         shift
     ;;
     --userpwd)
         USERPWD="$2"
-        echo $USERPWD
         shift
     ;;
     *)
@@ -36,22 +37,22 @@ do
   shift
 done
 
-# User Variables. Change these if Unattended install
+# User Variables array
 declare -A USERVARIABLES
-USERVARIABLES[USERNAME]="username"
-USERVARIABLES[HOSTNAME]="computer-name"
-USERVARIABLES[BUNDLES]="kdeTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
-USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
-USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
-USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
-USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
-USERVARIABLES[ROOTPART]="/dev/vda2"
-USERVARIABLES[ROOTFILE]="EXT4" ## EXT4 or BTRFS or F2FS
-USERVARIABLES[ENCRYPT]="NO" ## YES or NO
-USERVARIABLES[ROOTMODE]="CREATE"
+# USERVARIABLES[USERNAME]="username"
+# USERVARIABLES[HOSTNAME]="computer-name"
+# USERVARIABLES[BUNDLES]="kdeTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
+# USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
+# USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
+# USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
+# USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
+# USERVARIABLES[ROOTPART]="/dev/vda2"
+# USERVARIABLES[ROOTFILE]="EXT4" ## EXT4 or BTRFS or F2FS
+# USERVARIABLES[ENCRYPT]="NO" ## YES or NO
+# USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
-SCRIPTPATH=$( readlink -m $( type -p $0 ))
+SCRIPTPATH=$(readlink -m "$( type -p "$0" )")
 SCRIPTROOT=${SCRIPTPATH%/*}
 BOOTDEVICE=""
 ROOTDEVICE=""
@@ -62,12 +63,13 @@ CPUTYPE=""
 GPUBUNDLE=""
 INSTALLSTAGE=""
 
+
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/bundleConfigurators.sh
+  curl -LO "$GITURL""$GITBRANCH"/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/softwareBundles.sh
+  curl -LO "$GITURL""$GITBRANCH"/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
@@ -75,12 +77,12 @@ if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBun
     exit 1
 fi
 
-#Available Software Bundles
-# shellcheck source=softwareBundles.sh
-source "$SCRIPTROOT/softwareBundles.sh"
-#Addtional configurations needed for selected bundles
-# shellcheck source=bundleConfigurators.sh
-source "$SCRIPTROOT/bundleConfigurators.sh"
+if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
+  curl -LO "$GITURL""$GITBRANCH"/settings.conf
+  echo "$(tput setaf 0)$(tput setab 3) **First run? Be sure to change the settings.conf file before continuing.** $(tput sgr0)"
+  exit 1
+fi
+
 
 #Prompt User for settings
 promptSettings(){
@@ -112,10 +114,41 @@ getDevice(){
   done
 }
 
-#Export out the settings used/selected to installsettings.cfg
+importSettings(){
+  IMPORTTYPE=$1
+  echo "Importing ${IMPORTTYPE} Settings.."
+ 
+
+  if [[ $IMPORTTYPE == "all" ]] || [[ $IMPORTTYPE == "script" ]]; then
+    SCRIPTPATH=$(retrieveSettings 'SCRIPTPATH')
+    SCRIPTROOT=$(retrieveSettings 'SCRIPTROOT')
+    BOOTDEVICE=$(retrieveSettings 'BOOTDEVICE')
+    ROOTDEVICE=$(retrieveSettings 'ROOTDEVICE')
+    EFIPATH=$(retrieveSettings 'EFIPATH')
+    BOOTTYPE=$(retrieveSettings 'BOOTTYPE')
+    NETINT=$(retrieveSettings 'NETINT')
+    CPUTYPE=$(retrieveSettings 'CPUTYPE')
+    GPUBUNDLE=$(retrieveSettings 'GPUBUNDLE')
+    INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
+  fi
+  
+  if [[ $IMPORTTYPE == "all" ]] || [[ $IMPORTTYPE == "user" ]]; then
+    USERVARIABLES[BUNDLES]=$(retrieveSettings 'BUNDLES')
+    USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
+    USERVARIABLES[HOSTNAME]=$(retrieveSettings 'HOSTNAME')
+    USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
+    USERVARIABLES[KERNEL]=$(retrieveSettings 'KERNEL')
+    USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
+    USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
+    USERVARIABLES[ROOTFILE]=$(retrieveSettings 'ROOTFILE')
+    USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
+    USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
+    USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
+  fi  
+}
+
+#Export out the settings used/selected to settings.conf
 generateSettings(){
-  # create settings file
-  echo "" > "$SCRIPTROOT/installsettings.cfg"
 
   exportSettings "USERNAME" "${USERVARIABLES[USERNAME]}"
   exportSettings "HOSTNAME" "${USERVARIABLES[HOSTNAME]}"
@@ -232,6 +265,15 @@ generateSettings(){
 }
 
 driver(){
+  importSettings "user"
+  
+  #Available Software Bundles
+  # shellcheck source=softwareBundles.sh
+  source "$SCRIPTROOT/softwareBundles.sh"
+  #Addtional configurations needed for selected bundles
+  # shellcheck source=bundleConfigurators.sh
+  source "$SCRIPTROOT/bundleConfigurators.sh"
+
   if [[ $PROMPT -eq 1 ]]; then
     promptSettings
   fi
@@ -271,6 +313,10 @@ firstInstallStage(){
     USERPWD=""
     read -sp "${USERVARIABLES[USERNAME]} Password: " USERPWD
     echo
+    if [[ $ROOTPWD == "" ]] || [[ $USERPWD == "" ]]; then
+      echo "$(tput setaf 7)$(tput setab 1) **Passwords are required. Exiting..** $(tput sgr0)"
+      exit 1
+    fi
   fi
 
   echo "1. Generate Settings"
@@ -319,7 +365,7 @@ firstInstallStage(){
 
 secondInstallStage(){
   echo "10. chroot: Import Settings"
-  importSettings
+  importSettings "all"
 
   echo "11. chroot: Set root password"
   rootPassword
@@ -348,7 +394,7 @@ secondInstallStage(){
 
 
 thirdInstallStage(){
-  importSettings
+  importSettings "all"
 
   echo "20. chroot: Install yay - AUR package manager"
   makeYay
@@ -373,74 +419,32 @@ thirdInstallStage(){
 
 
 exportSettings(){
-  echo "Exporting $1=$2" 1>&2
-  EXPORTPARAM="$1=$2"
-  ## write all settings to a file on new root
+  SETTINGNAME=$1
+  SETTING=$2
+  # echo "Exporting $1=$2" 1>&2
+  EXPORTPARAM="${SETTINGNAME}=${SETTING}"
 
-  ## delete any previously matching settings
-  sed -i "s/^$1=.*//" "$SCRIPTROOT/installsettings.cfg"
+  CURRENTSETTING=$(grep "^${SETTINGNAME}=" "$SCRIPTROOT/settings.conf" | cut -f2,2 -d'=')
+  if [[ "${CURRENTSETTING}" == "" ]]; then
+    echo "${EXPORTPARAM}" | tee -a "$SCRIPTROOT/settings.conf" > /dev/null
+  else 
+    ## delete any previously matching settings
+    sed -i "s%^${SETTINGNAME}=.*%${EXPORTPARAM}%" "$SCRIPTROOT/settings.conf"
+  fi
 
-  echo -e "$EXPORTPARAM" >> "$SCRIPTROOT/installsettings.cfg"
-}
-
-importSettings(){
-  echo "Importing Settings.."
-  
-  SCRIPTPATH=$(retrieveSettings 'SCRIPTPATH')
-  SCRIPTROOT=$(retrieveSettings 'SCRIPTROOT')
-  BOOTDEVICE=$(retrieveSettings 'BOOTDEVICE')
-  ROOTDEVICE=$(retrieveSettings 'ROOTDEVICE')
-  EFIPATH=$(retrieveSettings 'EFIPATH')
-  BOOTTYPE=$(retrieveSettings 'BOOTTYPE')
-  NETINT=$(retrieveSettings 'NETINT')
-  CPUTYPE=$(retrieveSettings 'CPUTYPE')
-  GPUBUNDLE=$(retrieveSettings 'GPUBUNDLE')
-  INSTALLSTAGE=$(retrieveSettings 'INSTALLSTAGE')
-  
-  USERVARIABLES[BUNDLES]=$(retrieveSettings 'BUNDLES')
-  USERVARIABLES[USERNAME]=$(retrieveSettings 'USERNAME')
-  USERVARIABLES[HOSTNAME]=$(retrieveSettings 'HOSTNAME')
-  USERVARIABLES[DESKTOP]=$(retrieveSettings 'DESKTOP')
-  USERVARIABLES[BOOTPART]=$(retrieveSettings 'BOOTPART')
-  USERVARIABLES[BOOTMODE]=$(retrieveSettings 'BOOTMODE')
-  USERVARIABLES[ROOTFILE]=$(retrieveSettings 'ROOTFILE')
-  USERVARIABLES[ENCRYPT]=$(retrieveSettings 'ENCRYPT')
-  USERVARIABLES[ROOTPART]=$(retrieveSettings 'ROOTPART')
-  USERVARIABLES[ROOTMODE]=$(retrieveSettings 'ROOTMODE')
-
-  echo "Imported SCRIPTPATH=${SCRIPTPATH}"
-  echo "Imported SCRIPTROOT=${SCRIPTROOT}"
-  echo "Imported BOOTDEVICE=${BOOTDEVICE}"
-  echo "Imported ROOTDEVICE=${ROOTDEVICE}"
-  echo "Imported ROOTFILE=${ROOTFILE}"
-  echo "Imported ENCRYPT=${ENCRYPT}"
-  echo "Imported EFIPATH=${EFIPATH}"
-  echo "Imported BOOTTYPE=${BOOTTYPE}"
-  echo "Imported NETINT=${NETINT}"
-  echo "Imported CPUTYPE=${CPUTYPE}"
-  echo "Imported GPUBUNDLE=${GPUBUNDLE}"
-  echo "Imported INSTALLSTAGE=${INSTALLSTAGE}"
-
-  echo "Imported USERNAME=${USERVARIABLES[USERNAME]}"
-  echo "Imported HOSTNAME=${USERVARIABLES[HOSTNAME]}"
-  echo "Imported BUNDLES=${USERVARIABLES[BUNDLES]}"
-  echo "Imported DESKTOP=${USERVARIABLES[DESKTOP]}"
-  echo "Imported BOOTPART=${USERVARIABLES[BOOTPART]}"
-  echo "Imported ROOTPART=${USERVARIABLES[ROOTPART]}"
-  echo "Imported ROOTMODE=${USERVARIABLES[ROOTMODE]}"
-  echo "Imported BOOTMODE=${USERVARIABLES[BOOTMODE]}"
 }
 
 #retrieveSettings 'SETTINGNAME'
 retrieveSettings(){
   if [[ $DRYRUN -eq 1 ]]; then
-    SETTINGSPATH="./installsettings.cfg"
+    SETTINGSPATH="./settings.conf"
   else
-    SETTINGSPATH="$SCRIPTROOT/installsettings.cfg"
+    SETTINGSPATH="$SCRIPTROOT/settings.conf"
   fi 
-
+  
   SETTINGNAME=$1
-  SETTING=$(grep "$SETTINGNAME" "$SETTINGSPATH" | cut -f2,2 -d'=')
+
+  SETTING=$(grep "^${SETTINGNAME}=" "$SETTINGSPATH" | cut -f2,2 -d'=')
   echo "$SETTING"
 }
 
@@ -589,9 +593,9 @@ mountParts(){
   if [[ "$BOOTTYPE" = "EFI" ]]; then
 
     runCommand mkdir /mnt/boot
-    runCommand mount ${USERVARIABLES[BOOTPART]} /mnt/boot
+    runCommand mount "${USERVARIABLES[BOOTPART]}" /mnt/boot
   else
-    runCommand mount ${USERVARIABLES[ROOTPART]} /mnt
+    runCommand mount "${USERVARIABLES[ROOTPART]}" /mnt
   fi
 }
 
@@ -641,7 +645,7 @@ chrootTime(){
   runCommand cp "$SCRIPTPATH" /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp "$SCRIPTROOT"/softwareBundles.sh /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp "$SCRIPTROOT"/bundleConfigurators.sh /mnt/home/"${USERVARIABLES[USERNAME]}"
-  runCommand cp "$SCRIPTROOT"/installsettings.cfg /mnt/home/"${USERVARIABLES[USERNAME]}"
+  runCommand cp "$SCRIPTROOT"/settings.conf /mnt/home/"${USERVARIABLES[USERNAME]}"
   runCommand cp /etc/pacman.conf /mnt/etc/
   runCommand cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/
 }
@@ -661,9 +665,9 @@ genLocales(){
   GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
   COUNTRYINFO=$(curl -sX GET "https://raw.githubusercontent.com/annexare/Countries/master/data/countries.json" | tr -d '\n' | tr -d ' ')
-  LANGUAGES=$(echo $COUNTRYINFO | grep -Po '(?<="'$COUNTRYCODE'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
+  LANGUAGES=$(echo "$COUNTRYINFO" | grep -Po '(?<="'"$COUNTRYCODE"'":{).*?(?=})' | grep -Po '(?<=:\[).*?(?=\])')
   #LANGUAGES=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
-  readarray -t LANGARRAY < <(echo $LANGUAGES | grep -oP '(?<=").*?(?=")')
+  readarray -t LANGARRAY < <(echo "$LANGUAGES" | grep -oP '(?<=").*?(?=")')
   declare -p LANGARRAY
   for LANGUAGE in "${LANGARRAY[@]}"
   do
