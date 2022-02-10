@@ -125,7 +125,7 @@ kdePackages-Config(){
 
   #enable SDDM and set autologin, also set theme to breeze
   sudo systemctl enable sddm
-  sudo mkdir /etc/sddm.conf.d
+  sudo mkdir -p /etc/sddm.conf.d
 
   ## disable bitmap fonts
   mkdir -p ~/.config/fontconfig/conf.d/
@@ -137,10 +137,10 @@ echo '<?xml version="1.0"?>
       <bool>false</bool>
     </edit>
   </match>
-</fontconfig>' | tee -a ~/.config/fontconfig/conf.d/20-no-embedded.conf
+</fontconfig>' | tee ~/.config/fontconfig/conf.d/20-no-embedded.conf
 
-  sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key Session plasma
-  sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User "${USERVARIABLES[USERNAME]}"
+  # sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key Session plasma
+  # sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User "${USERVARIABLES[USERNAME]}"
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Theme --key Current breeze
 
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
@@ -153,17 +153,15 @@ echo '<?xml version="1.0"?>
   kwriteconfig5 --file ~/.config/dolphinrc --group CompactMode --key FontWeight 50
   kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key ExpandableFolders false
   kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key FontWeight 50
-  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key PreviewSize 16
+  kwriteconfig5 --file ~/.config/dolphinrc --group DetailsMode --key PreviewSize 22
+  kwriteconfig5 --file ~/.config/dolphinrc --group General --key RememberOpenedTabs false
   kwriteconfig5 --file ~/.config/dolphinrc --group General --key ShowSelectionToggle false
   kwriteconfig5 --file ~/.config/dolphinrc --group IconsMode --key FontWeight 50
   kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
-  ## Set Dolphin to start up at home folder
+  kwriteconfig5 --file ~/.local/share/dolphin/view_properties/global/.directory --group Dolphin --key ViewMode 1
 
-  ## Settings / Screen Edges. Top right desktop view, bottom right window view
-
-  ## Set icon view to show all, not just current desktop
-  
-
+  ## Konsole 
+  kwriteconfig5 --file ~/.config/konsolerc --group MainWindow --key MenuBar Disabled
 }
 
 gnomePackages-Config(){
@@ -209,16 +207,6 @@ grubThemePackages-Config(){
 }
 
 kdeThemePackages-Config(){
-  ## Installed the tiled menu
-  ## Remove
-  #cd ~
-  #curl -LO https://github.com/Zren/plasma-applet-tiledmenu/archive/v40.zip 
-  #unzip v40.zip
-  #cd ~/plasma-applet-tiledmenu-40/
-  #kpackagetool5 -t Plasma/Applet -i package
-  
-  ## WIP - Change application menu to tiled menu
-  #sudo sed -i 's|org.kde.plasma.kickoff|com.github.zren.tiledmenu|' /usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js
 
 echo 'kickoff.currentConfigGroup = ["Configuration","General"] 
 kickoff.writeConfig("appDescription", "hidden")
@@ -237,10 +225,7 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 location 4
   kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 24 plugin org.kde.panel
 
-  ##temporary fix for the dark theme colours being incorrect
- # sudo cp /usr/share/color-schemes/Qogirdark.colors /usr/share/plasma/desktoptheme/Qogir-dark/colors
-
-  ##Apply the themes to qogir and icons set to numix
+  ##Apply the themes (Breeze Light) and icons (Papirus)
   kwriteconfig5 --file ~/.config/kdeglobals --group General --key ColorScheme BreezeLight
   kwriteconfig5 --file ~/.config/kdeglobals --group General --key Name 'Breeze Light'
   kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Papirus

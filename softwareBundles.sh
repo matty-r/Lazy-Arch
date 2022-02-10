@@ -96,7 +96,7 @@ grubThemePackages=(arch-silence-grub-theme-git)
 
 
 ##Desktop Environment Packages
-kdePackages=(plasma kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager firefox bluedevil)
+kdePackages=(plasma-meta kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager firefox bluedevil)
 gnomePackages=(gnome gnome-extra networkmanager firefox)
 xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet firefox pavucontrol pulseaudio pulseaudio-alsa networkmanager-openvpn file-roller p7zip unrar tar)
 
