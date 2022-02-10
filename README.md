@@ -1,7 +1,4 @@
-## *WARNING!*
-WORK IN PROGRESS - This script was intended for personal use only. Use at your own risk - and may result in a loss of data. 
-
-### Purpose
+## Purpose
 
 Created because i'm lazy. I use Arch Linux regularly and on almost all of my PCs (Desktops, Laptops, VMs), and I wanted a way to automate the boring stuff - such as partitioning, installing a DE with it's packages, and setting up a boot loader. 
 
@@ -13,9 +10,11 @@ There are a lot of Arch Linux install scripts out there, but if you think you'd 
 
 **See Lazy-Arch wiki entry for more details. **
 
-### Testing
+### Testing platforms
 
-This was tested mostly within KVM, or hardware with an Intel CPU and nVidia GPU.
+* Qemu/KVM
+* Desktop: AMD CPU & Nvidia GPU
+* Laptop: Intel CPU & Nvidia (Prime) GPU
 
 ### Script Overview
 
@@ -23,48 +22,50 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 
 ### Features
 * Choice of Kernel
-* BTRFS on root
+* BTRFS/F2FS on root
 * Encrypted root partition
 * Auto-Snapshots through Snapper
 * Snapshots integrated into GRUB
 * GRUB Boot Manager
 * Software Bundles with scripted configuration (Such as Steam, Lutris, RDP etc..)
-* Sane defaults for KDE
+* Sane defaults for KDE (other choices of DE available)
+* Auto-detect GPU (including if nVidia Prime is required)
+* Auto-detect platform (i.e VM - vmware/hyper-v/qemu/virtualbox)
 
 ### Usage - Full Build
 
 
 1. Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
 
-1a. Download:
-
+* Download:
+    ```sh
     curl -LO https://raw.githubusercontent.com/matty-r/lazy-arch/master/arch-build.sh
-
-1b. or Clone - Using git (Least Likely option - as git isn't installed on the arch iso)
-
-    git clone https://github.com/matty-r/lazy-arch
-    cd lazy-arch
-    mv * ~/
-
-3. Edit arch-build.sh with the appropriate bundles you need
-
-    ##### *Example User Variables:*
-    ```
-    #Just fill in within the "quotes"
-    USERVARIABLES[USERNAME]="matty-r"
-    USERVARIABLES[HOSTNAME]="matts-arch"
-    USERVARIABLES[BUNDLES]="kdeTheme grubTheme gaming media admin office"
-    USERVARIABLES[DESKTOP]="kde"
-    USERVARIABLES[KERNEL]="linux-zen"
-    USERVARIABLES[BOOTPART]="/dev/vda1"
-    USERVARIABLES[BOOTMODE]="CREATE"
-    USERVARIABLES[ROOTPART]="/dev/vda2"
-    USERVARIABLES[ROOTMODE]="CREATE"
     ```
     
-3. Set arch-build.sh to executable
+2. Set arch-build.sh to executable
     ```sh
     chmod +x arch-build.sh
+    ```
+
+3. Execute the script to download the extra files
+    ```sh
+    ./arch-build.sh
+    ```
+
+4. Edit settings.conf with the appropriate bundles/settings you need
+    ### READ SETTINGS.CONF CAREFULLY
+    ```sh
+    USERNAME=matty-r
+    HOSTNAME=matts-desktop
+    BUNDLES=kdeTheme gaming
+    DESKTOP=kde
+    KERNEL=linux-zen
+    BOOTPART=/dev/vda1
+    BOOTMODE=CREATE
+    ROOTPART=/dev/vda2
+    ROOTMODE=CREATE
+    ROOTFILE=EXT4
+    ENCRYPT=NO
     ```
 
 5. In the first instance, execute with ./arch-build.sh -d (This will display all of the commands the script intends to run, without making any system changes)
