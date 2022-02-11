@@ -3,7 +3,7 @@
 # Arch Linux INSTALL SCRIPT
 
 GITURL="https://raw.githubusercontent.com/matty-r/lazy-arch/"
-GITBRANCH="restructure"
+GITBRANCH="master"
 
 #Exit on error
 #set -e
