@@ -5,6 +5,15 @@
 GITURL="https://raw.githubusercontent.com/matty-r/lazy-arch/"
 GITBRANCH="master"
 
+# Detect if we have been piped
+# if so, close it and reopen to standard input
+
+if [ ! -t 0 ];then
+    tmpcfg=$(cat -)
+    exec 0<&-   ## close current pipeline input 
+    exec 0</dev/tty   ##reopen input fd with standard input
+fi
+
 #Exit on error
 #set -e
 # Check what params this has been launched with.
@@ -424,11 +433,11 @@ exportSettings(){
   # echo "Exporting $1=$2" 1>&2
   EXPORTPARAM="${SETTINGNAME}=${SETTING}"
 
-  CURRENTSETTING=$(grep "^${SETTINGNAME}=" "$SCRIPTROOT/settings.conf" | cut -f2,2 -d'=')
+  CURRENTSETTING=$(grep "^${SETTINGNAME}=" "$SCRIPTROOT/settings.conf")
   if [[ "${CURRENTSETTING}" == "" ]]; then
-    echo "${EXPORTPARAM}" | tee -a "$SCRIPTROOT/settings.conf" > /dev/null
+    printf "\n%s" "${EXPORTPARAM}" | tee -a "$SCRIPTROOT/settings.conf" > /dev/null
   else 
-    ## delete any previously matching settings
+    ## replace any previously matching settings
     sed -i "s%^${SETTINGNAME}=.*%${EXPORTPARAM}%" "$SCRIPTROOT/settings.conf"
   fi
 
