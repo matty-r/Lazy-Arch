@@ -74,11 +74,13 @@ INSTALLSTAGE=""
 
 
 if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  curl -LO "$GITURL""$GITBRANCH"/bundleConfigurators.sh
+  echo "$(tput setaf 2)$(tput setab 0) **Downloading bundleConfigurators.sh..** $(tput sgr0)"
+  curl -s -SLO "$GITURL""$GITBRANCH"/bundleConfigurators.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  curl -LO "$GITURL""$GITBRANCH"/softwareBundles.sh
+  echo "$(tput setaf 2)$(tput setab 0) **Downloading softwareBundles.sh..** $(tput sgr0)"
+  curl -s -SLO "$GITURL""$GITBRANCH"/softwareBundles.sh
 fi
 
 if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
@@ -87,7 +89,8 @@ if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBun
 fi
 
 if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
-  curl -LO "$GITURL""$GITBRANCH"/settings.conf
+  echo "$(tput setaf 2)$(tput setab 0) **Downloading settings.conf..** $(tput sgr0)"
+  curl -s -SLO "$GITURL""$GITBRANCH"/settings.conf
   echo "$(tput setaf 0)$(tput setab 3) **First run? Be sure to change the settings.conf file before continuing.** $(tput sgr0)"
   exit 1
 fi
