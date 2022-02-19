@@ -193,7 +193,7 @@ esxiGuestPackages-Config(){
 }
 
 officePackages-Config(){
-  sudo systemctl enable org.cups.cupsd
+  sudo systemctl enable cups
 }
 
 mediaPackages-Config(){
