@@ -34,6 +34,7 @@ Creates two partitions (if using UEFI), Boot and Root. Root will be encrypted, a
 
 ### Usage - Full Build
 
+## Ensure you're using the latest Arch Linux ISO.
 
 1. Clone/Download the GitHub repository onto your local drive at /root (/root is the expected directory the arch-build files will reside)
 

@@ -48,17 +48,6 @@ done
 
 # User Variables array
 declare -A USERVARIABLES
-# USERVARIABLES[USERNAME]="username"
-# USERVARIABLES[HOSTNAME]="computer-name"
-# USERVARIABLES[BUNDLES]="kdeTheme" ## Seperate by single space only (Example "gaming dev"). Found in softwareBundles.sh
-# USERVARIABLES[DESKTOP]="kde" #Sets the DE for RDP, and will run the package configurator - enabling the default WM for that DE. ## "kde" for Plasma, "xfce" for XFCE, "gnome" for Gnome, "none" for no DE
-# USERVARIABLES[KERNEL]="linux-zen" ## https://wiki.archlinux.org/index.php/Kernel: Stable="linux", Hardened="linux-hardened", Longterm="linux-lts" Zen Kernel="linux-zen"
-# USERVARIABLES[BOOTPART]="/dev/vda1" ## Default Config: If $BOOTTYPE is BIOS, ROOTPART will be the same as BOOTPART (Only EFI needs the seperate partition)
-# USERVARIABLES[BOOTMODE]="CREATE" ## "CREATE" will destroy the *DISK* with a new label, "FORMAT" will only format the partition, "LEAVE" will do nothing
-# USERVARIABLES[ROOTPART]="/dev/vda2"
-# USERVARIABLES[ROOTFILE]="EXT4" ## EXT4 or BTRFS or F2FS
-# USERVARIABLES[ENCRYPT]="NO" ## YES or NO
-# USERVARIABLES[ROOTMODE]="CREATE"
 
 # Script Variables. DO NOT CHANGE THESE
 SCRIPTPATH=$(readlink -m "$( type -p "$0" )")
