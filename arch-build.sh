@@ -3,7 +3,7 @@
 # Arch Linux INSTALL SCRIPT
 
 GITURL="https://raw.githubusercontent.com/matty-r/lazy-arch/"
-GITBRANCH="master"
+GITBRANCH="cleanup"
 
 # Detect if we have been piped
 # if so, close it and reopen to standard input
