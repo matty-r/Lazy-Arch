@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 2.11
+# Version 2.12
 # Arch Linux INSTALL SCRIPT
 
 GITURL="https://raw.githubusercontent.com/matty-r/lazy-arch/"
