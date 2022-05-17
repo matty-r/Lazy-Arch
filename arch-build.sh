@@ -60,28 +60,6 @@ CPUTYPE=""
 GPUBUNDLE=""
 INSTALLSTAGE=""
 
-if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
-  echo "$(tput setaf 2)$(tput setab 0) **Downloading bundleConfigurators.sh..** $(tput sgr0)"
-  curl -s -SLO "$GITURL""$GITBRANCH"/bundleConfigurators.sh
-fi
-
-if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  echo "$(tput setaf 2)$(tput setab 0) **Downloading softwareBundles.sh..** $(tput sgr0)"
-  curl -s -SLO "$GITURL""$GITBRANCH"/softwareBundles.sh
-fi
-
-if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
-  echo "$(tput setaf 7)$(tput setab 1) **Check internet access. Unable to download required files.** $(tput sgr0)"
-  exit 1
-fi
-
-if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
-  echo "$(tput setaf 2)$(tput setab 0) **Downloading settings.conf..** $(tput sgr0)"
-  curl -s -SLO "$GITURL""$GITBRANCH"/settings.conf
-  echo "$(tput setaf 0)$(tput setab 3) **First run? Be sure to change the settings.conf file before continuing.** $(tput sgr0)"
-  exit 1
-fi
-
 checkISOVersion() {
   echo "Checking ISO versions..."
   LATESTVERSION=$(curl -s https://gitlab.archlinux.org/api/v4/projects/10190/releases/ | grep -Po '(?<=version ).*?(?=\))' | head -n 1)
@@ -111,6 +89,30 @@ checkISOVersion() {
     echo "$(tput setaf 0)$(tput setab 3)Unable to verify your ISO with the latest release.. continuing anyway..$(tput sgr0)"
   fi
 }
+
+checkISOVersion
+
+if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ]; then
+  echo "$(tput setaf 2)$(tput setab 0) **Downloading bundleConfigurators.sh..** $(tput sgr0)"
+  curl -s -SLO "$GITURL""$GITBRANCH"/bundleConfigurators.sh
+fi
+
+if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
+  echo "$(tput setaf 2)$(tput setab 0) **Downloading softwareBundles.sh..** $(tput sgr0)"
+  curl -s -SLO "$GITURL""$GITBRANCH"/softwareBundles.sh
+fi
+
+if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -f "$SCRIPTROOT"/softwareBundles.sh ]; then
+  echo "$(tput setaf 7)$(tput setab 1) **Check internet access. Unable to download required files.** $(tput sgr0)"
+  exit 1
+fi
+
+if [ ! -f "$SCRIPTROOT"/settings.conf ]; then
+  echo "$(tput setaf 2)$(tput setab 0) **Downloading settings.conf..** $(tput sgr0)"
+  curl -s -SLO "$GITURL""$GITBRANCH"/settings.conf
+  echo "$(tput setaf 0)$(tput setab 3) **First run? Be sure to change the settings.conf file before continuing.** $(tput sgr0)"
+  exit 1
+fi
 
 #Prompt User for settings
 promptSettings() {
@@ -266,7 +268,7 @@ generateSettings() {
   VGACONTROLLER=$(echo "$(lspci -vnn | grep VGA)" | tr '[:upper:]' '[:lower:]')
   GFXCONTROLLER=$(echo "$(lspci -vnn | grep 3D)" | tr '[:upper:]' '[:lower:]')
 
-  if [[ ${GFXCONTROLLER} =~ "nvidia" && ${VGACONTROLLER} =~ "intel" ]]; then
+  if [[ ${GFXCONTROLLER} =~ "nvidia" && ${VGACONTROLLER} =~ "intel" ]] || [[ ${VGACONTROLLER} =~ "nvidia" && ${VGACONTROLLER} =~ "intel" ]]; then
     GPUBUNDLE="nvidia nvidiaPrime"
   elif [[ ${VGACONTROLLER} =~ "nvidia" ]]; then
     GPUBUNDLE="nvidia"
