@@ -59,7 +59,7 @@ virtualPackages=(libvirt qemu virt-manager ebtables dnsmasq ovmf)
 rdpPackages=(xrdp-git xorgxrdp-git xorg-xinit xterm xorg-xrdb)
 dailyPackages=(protonmail-bridge-bin nextcloud-client)
 officePackages=(cups cups-pdf system-config-printer tesseract tesseract-data-eng pdftk libreoffice-fresh okular masterpdfeditor-free gscan2pdf otf-ibm-plex ttf-carlito ttf-caladea ttf-liberation)
-mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc bluez bluez-utils pulseaudio-alsa) 
+mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc bluez bluez-utils pulseaudio-alsa)
 adminPackages=(rsync filezilla networkmanager-openvpn remmina-git freerdp-git gnome-keyring)
 devPackages=(visual-studio-code-bin qtcreator)
 dockerPackages=(docker docker-compose)
@@ -77,7 +77,7 @@ battleNetPackages=(lib32-gnutls lib32-libldap lib32-libgpg-error lib32-sqlite li
 ## Add to /etc/environment "VK_ICD_FILENAMES=/" See Arch Wiki vulkan
 
 #Arch Linux Base
-archBasePackages=(base "${USERVARIABLES[KERNEL]}" "${USERVARIABLES[KERNEL]}"-headers linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget alsa-utils htop)
+archBasePackages=(base "${USERVARIABLES[KERNEL]}" "${USERVARIABLES[KERNEL]}"-headers linux-firmware cryptsetup sudo device-mapper e2fsprogs ntfs-3g inetutils logrotate lvm2 man-db mdadm nano netctl pciutils perl procps-ng sysfsutils texinfo usbutils util-linux vi xfsprogs openssh git autoconf automake binutils bison fakeroot findutils flex gcc libtool m4 make pacman patch pkgconf which networkmanager btrfs-progs unzip wget alsa-utils htop sof-firmware)
 
 #Guest Type Packages
 vboxGuestPackages=(virtualbox-guest-utils)
@@ -138,7 +138,7 @@ installSoftwareBundles(){
           if [[ "$answer" =~ "y" ]]; then
               ./bundleConfigurators.sh "$bundle"
           fi
-        else 
+        else
           echo "$(tput setaf 3)$(tput setab 1) ------------------- Start ${bundle}Packages-Config ------------------- $(tput sgr0)"
           "${bundle}Packages-Config"
           echo "$(tput setaf 2)$(tput setab 1) ------------------- Done ${bundle}Packages-Config ------------------- $(tput sgr0)"
@@ -147,7 +147,7 @@ installSoftwareBundles(){
     else
       echo "Chosen bundle $bundle is invalid. Skipping!"
     fi
-  done 
+  done
 }
 
 
