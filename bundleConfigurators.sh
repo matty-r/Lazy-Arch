@@ -5,7 +5,7 @@
 while [[ "$#" -gt 0 ]];
 do
   case $1 in
-    -h|--help) 
+    -h|--help)
         echo "Available configs"
         RUNCONFIG='compgen -A function'
     ;;
@@ -22,13 +22,15 @@ nvidiaPackages-Config(){
   fi
 
   case ${USERVARIABLES[KERNEL]} in
-    "linux") 
+    "linux")
       echo "Using vanilla kernel. No change necessary."
     ;;
-    "linux-lts") 
+    "linux-lts")
       echo "Using LTS kernel, change to nvidia-lts."
+      sudo yay -R nvidia --noconfirm
+      sudo yay -S nvidia-lts --noconfirm
     ;;
-    *) 
+    *)
       echo "Using ${USERVARIABLES[KERNEL]} kernel, change nvidia-dkms."
       sudo yay -R nvidia --noconfirm
       sudo yay -S nvidia-dkms --noconfirm
@@ -85,7 +87,7 @@ btrfsPackages-Config(){
   ##Add the snapper config manually
   sudo cp /usr/share/snapper/config-templates/default /etc/snapper/configs/root
   sudo sed -i 's/SNAPPER_CONFIGS=""/SNAPPER_CONFIGS="root"/' /etc/conf.d/snapper
-  
+
   ##enable grub snapshots
   sudo systemctl enable grub-btrfs.path
   sudo sed -i 's|^#GRUB_DISABLE_RECOVERY=.*|GRUB_DISABLE_RECOVERY=false|' /etc/default/grub
@@ -160,7 +162,7 @@ echo '<?xml version="1.0"?>
   kwriteconfig5 --file ~/.config/dolphinrc --group MainWindow --key MenuBar Disabled
   kwriteconfig5 --file ~/.local/share/dolphin/view_properties/global/.directory --group Dolphin --key ViewMode 1
 
-  ## Konsole 
+  ## Konsole
   kwriteconfig5 --file ~/.config/konsolerc --group MainWindow --key MenuBar Disabled
 }
 
@@ -208,7 +210,7 @@ grubThemePackages-Config(){
 
 kdeThemePackages-Config(){
 
-echo 'kickoff.currentConfigGroup = ["Configuration","General"] 
+echo 'kickoff.currentConfigGroup = ["Configuration","General"]
 kickoff.writeConfig("appDescription", "hidden")
 kickoff.writeConfig("appListWidth", "248")
 kickoff.writeConfig("defaultTileColor", "#00000000")
@@ -231,12 +233,12 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/kdeglobals --group Icons --key Theme Papirus
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key LookAndFeelPackage org.kde.breezetwilight.desktop
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
-  
+
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key ColorScheme BreezeLight
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key Name 'Breeze Light'
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group General --key widgetStyle Breeze
   kwriteconfig5 --file ~/.kde4/share/config/kdeglobals --group Icons --key Theme Papirus
-  
+
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key BorderActivate 9
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key DesktopLayout org.kde.breeze.desktop
   kwriteconfig5 --file ~/.config/kwinrc --group TabBox --key DesktopListLayout org.kde.breeze.desktop
@@ -263,9 +265,9 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/ksmserverrc --group General --key confirmLogout false
 
   ##Settings / Plasma Style
-  kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name breeze-dark 
-  kwriteconfig5 --file ~/.config/plasmarc --group Theme-plasmathemeexplorer --key name breeze-dark 
-  
+  kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name breeze-dark
+  kwriteconfig5 --file ~/.config/plasmarc --group Theme-plasmathemeexplorer --key name breeze-dark
+
   ##Settings / Screen Locker
   # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key Theme com.github.vinceliuice.Qogir
   # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.potd
@@ -284,7 +286,7 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-menu-images true
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-modules colorreload-gtk-module:window-decorations-gtk-module
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-primary-button-warps-slider true
-  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-theme-name Breeze 
+  kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-theme-name Breeze
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-toolbar-style 3
 
   ##Settings / Application Style / GTK 2
@@ -350,7 +352,7 @@ retrieveBundleSettings(){
   BUNDLECONFIGPATH=$( readlink -m "$( type -p "$0" )")
   BUNDLECONFIGROOT=${BUNDLECONFIGPATH%/*}
 
-  SETTINGSPATH="$BUNDLECONFIGROOT/settings.conf" 
+  SETTINGSPATH="$BUNDLECONFIGROOT/settings.conf"
 
   if [ ! -f "$SETTINGSPATH" ]; then
     echo 'Unable to import required settings. Exiting.'
