@@ -164,6 +164,7 @@ echo '<?xml version="1.0"?>
 
   ## Konsole
   kwriteconfig5 --file ~/.config/konsolerc --group MainWindow --key MenuBar Disabled
+  kwriteconfig5 --file ~/.config/konsolerc --group MainWindow --key State "AAAA/wAAAAD9AAAAAQAAAAAAAAAAAAAAAPwCAAAAAfsAAAAcAFMAUwBIAE0AYQBuAGEAZwBlAHIARABvAGMAawAAAAAA/////wAAAN0BAAADAAAFOwAAApQAAAAEAAAABAAAAAgAAAAI/AAAAAEAAAACAAAAAgAAABYAbQBhAGkAbgBUAG8AbwBsAEIAYQByAAAAAAD/////AAAAAAAAAAAAAAAcAHMAZQBzAHMAaQBvAG4AVABvAG8AbABiAGEAcgAAAAD8/////wAAAAAAAAAA"
 }
 
 gnomePackages-Config(){
