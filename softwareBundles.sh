@@ -59,8 +59,8 @@ virtualPackages=(libvirt qemu virt-manager ebtables dnsmasq ovmf)
 rdpPackages=(xrdp-git xorgxrdp-git xorg-xinit xterm xorg-xrdb)
 dailyPackages=(protonmail-bridge-bin nextcloud-client)
 officePackages=(cups cups-pdf system-config-printer tesseract tesseract-data-eng pdftk libreoffice-fresh okular masterpdfeditor-free gscan2pdf otf-ibm-plex ttf-carlito ttf-caladea ttf-liberation)
-mediaPackages=(spotify glimpse-editor-git pulseaudio-bluetooth vlc bluez bluez-utils pulseaudio-alsa)
-adminPackages=(rsync filezilla networkmanager-openvpn remmina-git freerdp-git gnome-keyring)
+mediaPackages=(gimp vlc bluez bluez-utils)
+adminPackages=(rsync filezilla networkmanager-openvpn remmina-git freerdp)
 devPackages=(visual-studio-code-bin qtcreator)
 dockerPackages=(docker docker-compose)
 
@@ -98,7 +98,7 @@ grubThemePackages=(arch-silence-grub-theme-git)
 ##Desktop Environment Packages
 kdePackages=(plasma-meta kcalc konsole spectacle dolphin dolphin-plugins filelight kate kwalletmanager kdeconnect kdf kdialog kfind packagekit-qt5 ffmpegthumbs ark gwenview print-manager sddm partitionmanager firefox bluedevil)
 gnomePackages=(gnome gnome-extra networkmanager firefox)
-xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet firefox pavucontrol pulseaudio pulseaudio-alsa networkmanager-openvpn file-roller p7zip unrar tar)
+xfcePackages=(xfce4 xfce4-goodies lxdm networkmanager network-manager-applet firefox pavucontrol networkmanager-openvpn file-roller p7zip unrar tar)
 
 
 installSoftwareBundles(){

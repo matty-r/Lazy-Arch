@@ -268,6 +268,12 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/plasmarc --group Theme --key name breeze-dark
   kwriteconfig5 --file ~/.config/plasmarc --group Theme-plasmathemeexplorer --key name breeze-dark
 
+  ## Settings / Shortcuts / Add Application "Konsole"
+  kwriteconfig5 --file ~/.config/kglobalshortcutsrc --group "org.kde.konsole.desktop" --key NewTab "none,none,Open a New Tab"
+  kwriteconfig5 --file ~/.config/kglobalshortcutsrc --group "org.kde.konsole.desktop" --key NewWindow "none,none,Open a New Window"
+  kwriteconfig5 --file ~/.config/kglobalshortcutsrc --group "org.kde.konsole.desktop" --key _k_friendly_name "Konsole"
+  kwriteconfig5 --file ~/.config/kglobalshortcutsrc --group "org.kde.konsole.desktop" --key _launch "Ctrl+Alt+T,none,Konsole"
+
   ##Settings / Screen Locker
   # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key Theme com.github.vinceliuice.Qogir
   # kwriteconfig5 --file ~/.config/kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.potd
@@ -290,16 +296,16 @@ kickoff.writeConfig("tileMargin", "4")' | sudo tee -a /usr/share/plasma/layout-t
   kwriteconfig5 --file ~/.config/gtk-3.0/settings.ini --group Settings --key gtk-toolbar-style 3
 
   ##Settings / Application Style / GTK 2
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-enable-animations 1
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-cursor-theme-name '"breeze_cursors"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-primary-button-warps-slider 1
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-font-name '"Noto Sans,  10"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-theme-name '"Breeze"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-icon-theme-name '"Papirus"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-fallback-icon-theme '"Adwaita"'
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-toolbar-style 3
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-menu-images 1
-  kwriteconfig5 --file ~/.gtkrc-2.0 --group "" --key gtk-button-images 1
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-enable-animations 1
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-cursor-theme-name '"breeze_cursors"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-primary-button-warps-slider 1
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-font-name '"Noto Sans,  10"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-theme-name '"Breeze"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-icon-theme-name '"Papirus"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-fallback-icon-theme '"Adwaita"'
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-toolbar-style 3
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-menu-images 1
+  kwriteconfig5 --file ~/.gtkrc-2.0 --group "<default>" --key gtk-button-images 1
 
 }
 
