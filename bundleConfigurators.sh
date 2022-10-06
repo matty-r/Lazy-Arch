@@ -136,6 +136,7 @@ echo '<?xml version="1.0"?>
   # sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key Session plasma
   # sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Autologin --key User "${USERVARIABLES[USERNAME]}"
   sudo kwriteconfig5 --file /etc/sddm.conf.d/kde_settings.conf --group Theme --key Current breeze
+  sudo kwriteconfig5 --file /usr/share/icons/default/index.theme --group "Icon Theme" --key Inherits breeze_cursors
 
   kwriteconfig5 --file ~/.config/kdeglobals --group KDE --key SingleClick false
 
