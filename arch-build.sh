@@ -63,6 +63,12 @@ INSTALLSTAGE=""
 checkISOVersion() {
   echo "Checking ISO versions..."
   LATESTVERSION=$(curl -s https://gitlab.archlinux.org/api/v4/projects/10190/releases/ | grep -Po '(?<=version ).*?(?=\))' | head -n 1)
+
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to retrieve the latest version of the Arch Linux ISO. Check your internet connection and try again."
+    exit 1
+  fi
+
   LOCALVERSION=$(cat /run/archiso/airootfs/version)
 
   if [[ $(echo "${LATESTVERSION}" | wc -w) != 0 ]] && [[ $(echo "${LOCALVERSION}" | wc -w) != 0 ]]; then
@@ -289,6 +295,16 @@ generateSettings() {
 
 driver() {
   importSettings "user"
+
+  if [ ! -f "$SCRIPTROOT"/softwareBundles.sh ] || [ ! -r "$SCRIPTROOT"/softwareBundles.sh ]; then
+    echo "Error: softwareBundles.sh does not exist or is not readable. Make sure the file exists and has the correct permissions."
+    exit 1
+  fi
+
+  if [ ! -f "$SCRIPTROOT"/bundleConfigurators.sh ] || [ ! -r "$SCRIPTROOT"/bundleConfigurators.sh ]; then
+    echo "Error: bundleConfigurators.sh does not exist or is not readable. Make sure the file exists and has the correct permissions."
+    exit 1
+  fi
 
   #Available Software Bundles
   # shellcheck source=softwareBundles.sh
