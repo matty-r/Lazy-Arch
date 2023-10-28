@@ -693,7 +693,7 @@ setTime() {
 genLocales() {
   GEOLOCATE=$(curl -sX GET "http://ip-api.com/json/$(curl -s icanhazip.com)")
   COUNTRYCODE=$(echo "$GEOLOCATE" | grep -Po '(?<="countryCode":").*?(?=")')
-  COUNTRYINFO=$(curl -sX GET "https://raw.githubusercontent.com/annexare/Countries/main/packages/countries/src/data/countries.ts" | tr -d '\n' | tr -d ' ')
+  COUNTRYINFO=$(curl -sX GET "https://gist.githubusercontent.com/matty-r/13233057c539807a4177bd01cdd35545/raw/72b1746b651e03a9cce31c03e56cc38a0a811a5e/countries.txt" | tr -d '\n' | tr -d ' ')
   LANGUAGES=$(echo "$COUNTRYINFO" | grep -Po '(?<='"$COUNTRYCODE"':{).*?(?=})' | grep -Po '(?<=languages:\[).*?(?=\])')
   #LANGUAGES=$(echo $LANGUAGES | grep -oP '(?<=").*?(?=")' | head -n 1)
   readarray -t LANGARRAY < <(echo "$LANGUAGES" | grep -oP "(?<=').*?(?=')")
